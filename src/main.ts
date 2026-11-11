@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import './style.css';
 
 import type { CatId, Instrumento } from './types';
@@ -10,12 +9,14 @@ import { mesh, box } from './models/primitivas';
 import { BUILD } from './models/construtores';
 import { renderRevisar } from './revisar';
 import { validarDados } from './data/validar';
+import { lerCatalogo, carregarGlb, ajustarInstrumento, criarPessoa } from './models/carregador';
+import { criarSala, criarCenaDeReflexos, PISO_Y } from './ambiente';
 
 declare global { interface Window { __mesaOk?: boolean } }
 
 /** Um instrumento na cena: dados + objeto 3D + alvos de animação. */
 interface Obj {
-  d: Instrumento; g: THREE.Group; mats: THREE.MeshStandardMaterial[]; len: number;
+  d: Instrumento; g: THREE.Group; inner: THREE.Object3D; mats: THREE.MeshStandardMaterial[]; len: number;
   /** posição, rotação e escala de destino (a animação persegue esses valores) */
   tp: THREE.Vector3; tr: number; ts: number; lift: number; glow: number; placed: boolean;
 }
@@ -30,23 +31,29 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
+renderer.toneMappingExposure = 0.8;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x141b26);
+scene.background = new THREE.Color(0x0b0f14);
 const pmrem = new THREE.PMREMGenerator(renderer);
-scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environment = pmrem.fromScene(criarCenaDeReflexos(), 0.02).texture;
 
-const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 100);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 150);
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 controls.maxPolarAngle = Math.PI * 0.47;
+controls.minPolarAngle = 0.35; // evita olhar de cima através da lâmpada cirúrgica
 controls.minDistance = 1.2;
-controls.maxDistance = 24;
+controls.maxDistance = 19;
 
-scene.add(new THREE.HemisphereLight(0xffffff, 0x2a3546, 0.55));
-const sun = new THREE.DirectionalLight(0xffffff, 1.7);
+const sala = criarSala(); scene.add(sala.grupo);
+scene.add(new THREE.HemisphereLight(0xf2fbff, 0x5d7773, 0.35));
+// foco da lâmpada cirúrgica sobre a mesa
+const foco = new THREE.SpotLight(0xfff6e8, 60, 0, 0.62, 0.9, 2);
+foco.position.copy(sala.lampada).add(new THREE.Vector3(0, -0.6, 0)); foco.target.position.set(0, 0, 0.5);
+scene.add(foco, foco.target);
+const sun = new THREE.DirectionalLight(0xf4f8ff, 0.9);
 sun.position.set(3, 11, 6);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
@@ -71,8 +78,18 @@ mesa.add(box(9.0, 0.2, 5.0, new THREE.MeshStandardMaterial({ color:0xb7bec7, met
 const drape = mesh(new THREE.PlaneGeometry(8.8, 4.8), new THREE.MeshStandardMaterial({ color:0x2e7466, roughness:0.95 }));
 drape.rotation.x = -Math.PI / 2; drape.position.y = 0.002; drape.castShadow = false; mesa.add(drape);
 
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({ color:0x19202b, roughness:1 }));
-floor.rotation.x = -Math.PI / 2; floor.position.y = -1.2; floor.receiveShadow = true; scene.add(floor);
+// pernas da mesa de instrumentação e da bandeja (do tampo até o piso)
+const perna = new THREE.MeshStandardMaterial({ color:0xc9d0d8, metalness:0.85, roughness:0.3 });
+const alturaPerna = -0.2 - PISO_Y;
+function pernas(grupo: THREE.Group, cx: number, cz: number, w: number, d: number){
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]){
+    const p = mesh(new THREE.CylinderGeometry(0.11, 0.11, alturaPerna, 14), perna);
+    p.position.set(cx + sx * (w / 2 - 0.3), -0.2 - alturaPerna / 2, cz + sz * (d / 2 - 0.3)); grupo.add(p);
+  }
+  grupo.add(box(w - 0.6, 0.1, 0.12, perna, cx, PISO_Y + 1.2, cz - (d / 2 - 0.3)));
+  grupo.add(box(w - 0.6, 0.1, 0.12, perna, cx, PISO_Y + 1.2, cz + (d / 2 - 0.3)));
+}
+pernas(mesa, 0, 0, 9.0, 5.0);
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 function zoneTexture(cat: CatId, i: number){
@@ -101,6 +118,7 @@ ZONE_ORDER.forEach((cat, i) => {
 
 const TRAY_Z = 5.3;
 const tray = new THREE.Group(); scene.add(tray);
+pernas(tray, 0, 5.3, 9.0, 4.6);
 {
   const tm = new THREE.MeshStandardMaterial({ color:0xc9d0d8, metalness:0.85, roughness:0.3 });
   tray.add(box(9.0, 0.12, 4.6, tm, 0, -0.06, TRAY_Z));
@@ -116,24 +134,31 @@ const pedestal = new THREE.Group(); scene.add(pedestal);
 {
   const p = mesh(new THREE.CylinderGeometry(1.7, 1.85, 0.3, 64), new THREE.MeshStandardMaterial({ color:0x2a3546, metalness:0.3, roughness:0.6 }));
   p.position.y = 0.15; pedestal.add(p);
+  const coluna = mesh(new THREE.CylinderGeometry(0.5, 0.8, 0.2 - PISO_Y, 24), new THREE.MeshStandardMaterial({ color:0xc9d0d8, metalness:0.8, roughness:0.35 }));
+  coluna.position.y = (0 + PISO_Y) / 2; pedestal.add(coluna);
   const top = mesh(new THREE.CylinderGeometry(1.62, 1.62, 0.02, 64), new THREE.MeshStandardMaterial({ color:0x2e7466, roughness:0.95 }));
   top.position.y = 0.31; pedestal.add(top);
 }
 const PED_Y = 0.32;
 
 /* ---------------- Objetos dos instrumentos ---------------- */
+function materiaisDe(raiz: THREE.Object3D){
+  const mats = new Set<THREE.MeshStandardMaterial>();
+  raiz.traverse(o => { if (o instanceof THREE.Mesh) for (const m of ([] as THREE.Material[]).concat(o.material)) if (m instanceof THREE.MeshStandardMaterial) mats.add(m); });
+  return mats;
+}
 const objs: Obj[] = INSTR.map(d => {
   const inner = BUILD[d.id]();
   const bb = new THREE.Box3().setFromObject(inner);
   const c = bb.getCenter(new THREE.Vector3());
   inner.position.set(-c.x, -bb.min.y, -c.z);
   const g = new THREE.Group(); g.add(inner); scene.add(g);
-  const mats = new Set<THREE.MeshStandardMaterial>(); g.traverse(o => { if (o instanceof THREE.Mesh) mats.add(o.material); });
+  const mats = materiaisDe(g);
   const sz = bb.getSize(new THREE.Vector3());
   const hit = new THREE.Mesh(new THREE.BoxGeometry(sz.x + 0.08, 0.14, Math.max(sz.z, 0.12) + 0.08),
     new THREE.MeshBasicMaterial({ colorWrite:false, depthWrite:false }));
   hit.position.y = 0.07; g.add(hit);
-  const o: Obj = { d, g, mats:[...mats], len: bb.max.x - bb.min.x, tp:new THREE.Vector3(), tr:0, ts:1, lift:0, glow:-1, placed:false };
+  const o: Obj = { d, g, inner, mats:[...mats], len: bb.max.x - bb.min.x, tp:new THREE.Vector3(), tr:0, ts:1, lift:0, glow:-1, placed:false };
   g.userData.obj = o;
   return o;
 });
@@ -141,6 +166,28 @@ const byCat = {} as Record<CatId, Obj[]>; ZONE_ORDER.forEach(c => byCat[c] = obj
 function zoneSlot(cat: CatId, k: number){
   const n = byCat[cat].length, c = zoneCenter(ZONE_ORDER.indexOf(cat));
   return new THREE.Vector3(c.x, 0, c.z + 0.15 + (k - (n - 1) / 2) * 0.58);
+}
+
+/* ---------------- Modelos .glb opcionais (ver docs/modelos-3d.md) ---------------- */
+const misturadores: THREE.AnimationMixer[] = [];
+async function carregarModelosExternos(){
+  const cat = await lerCatalogo();
+  const base = import.meta.env.BASE_URL;
+  await Promise.all(Object.entries(cat.instrumentos ?? {}).map(async ([id, org]) => {
+    const o = objs.find(x => x.d.id === id);
+    if (!o){ console.warn('[modelos] id desconhecido no catalogo.json:', id); return; }
+    const glb = await carregarGlb(`${base}models/instrumentos/${org.arquivo}`);
+    if (!glb) return; // falhou: fica o modelo simples
+    const novo = ajustarInstrumento(glb.cena, o.len);
+    o.g.remove(o.inner); o.inner = novo; o.g.add(novo);
+    o.mats = [...materiaisDe(novo)]; o.glow = -1;
+  }));
+  await Promise.all((cat.pessoas ?? []).map(async cfg => {
+    const glb = await carregarGlb(`${base}models/pessoas/${cfg.arquivo}`);
+    if (!glb) return;
+    const { grupo, mixer } = criarPessoa(glb.cena, glb.animacoes, cfg, PISO_Y);
+    scene.add(grupo); if (mixer) misturadores.push(mixer);
+  }));
 }
 
 /* ---------------- Câmera animada ---------------- */
@@ -399,6 +446,7 @@ const GLOW = [0x000000, 0x1d3550, 0x1c6656];
 function tick(){
   const dt = Math.min(clock.getDelta(), 0.05);
   const k = 1 - Math.exp(-dt * 9);
+  for (const m of misturadores) m.update(dt);
   if (mode === 'quiz' && quiz.cur) quiz.cur.tr += dt * 0.5;
   for (const o of objs){
     const t = o.tp.clone(); t.y += o.lift + (o.lift ? Math.sin(performance.now() / 300) * 0.03 : 0);
@@ -424,5 +472,6 @@ onResize();
 for (const e of validarDados()) console.error('[dados]', e);
 setMode('explorar');
 tick();
+carregarModelosExternos();
 window.__mesaOk = true;
 el('loading').remove();

@@ -3,6 +3,7 @@ import { INSTR } from './data/instrumentos';
 import { CIRURGIAS } from './data/cirurgias';
 import { validarDados } from './data/validar';
 import type { CatId, Status } from './types';
+import { catalogo } from './models/carregador';
 
 const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 const nomeDe = (id: string) => INSTR.find(i => i.id === id)?.nome ?? `⚠ ${id}`;
@@ -52,6 +53,7 @@ export function renderRevisar(root: HTMLElement) {
         ${d.variacao ? `<p class="aviso">⚠ A classificação varia entre fontes. Também aceito em: ${d.variacao.tambem.map(chip).join(' ')}<br>${esc(d.variacao.nota)}</p>` : ''}
         ${d.fontes?.length ? `<p class="muted" style="margin:0">Fontes: ${d.fontes.map(esc).join('; ')}</p>` : ''}
         <p class="muted" style="margin:6px 0 0;font-size:12px">id: ${esc(d.id)}</p></div>`).join('') || '<p class="muted">Nada encontrado.</p>'}</div>
+      ${creditos()}
       <div class="foot">Para corrigir: edite <code>src/data/instrumentos.ts</code> ou os arquivos em <code>src/data/cirurgias/</code>. Material de estudo: a classificação varia entre faculdades.</div>
     </div>`;
     const q2 = root.querySelector<HTMLInputElement>('#rv-q')!;
@@ -60,4 +62,18 @@ export function renderRevisar(root: HTMLElement) {
     root.querySelector<HTMLButtonElement>('#rv-p')!.onclick = () => window.print();
   };
   draw();
+}
+
+/** Seção de créditos dos modelos 3D externos (.glb); avisa quando falta autor ou licença. */
+function creditos(): string {
+  const c = catalogo();
+  const itens = [
+    ...Object.entries(c.instrumentos ?? {}).map(([id, o]) => ({ nome: nomeDe(id), o })),
+    ...(c.pessoas ?? []).map(p => ({ nome: p.nome ?? p.arquivo, o: p })),
+  ];
+  if (!itens.length) return `<h3>Modelos 3D</h3><p class="muted">Nenhum modelo externo em uso: todos os instrumentos usam os modelos simples.</p>`;
+  return `<h3>Modelos 3D e créditos (${itens.length})</h3><ul class="miss">${itens.map(({ nome, o }) => {
+    const falta = !o.autor || !o.licenca;
+    return `<li>${esc(nome)} — ${esc(o.arquivo)} · ${o.autor ? esc(o.autor) : '<b>autor?</b>'} · ${o.licenca ? esc(o.licenca) : '<b>licença?</b>'}${o.fonte ? ` · <span class="muted">${esc(o.fonte)}</span>` : ''}${falta ? ' <span class="st todo">falta informação</span>' : ''}</li>`;
+  }).join('')}</ul>`;
 }
