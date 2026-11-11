@@ -162,7 +162,7 @@ export function criarSala(): { grupo: THREE.Group; lampada: THREE.Vector3 } {
   for (const dx of [-1, 1]) g.add(box(0.9, 1.7, 0.4, bolsa, sx + dx, PISO_Y + 13.9, sz));
 
   // mesa cirúrgica com o paciente coberto por campo
-  const px = 0, pz = -15.5, topoY = PISO_Y + 6.8;
+  const px = 0, pz = -14.3, topoY = PISO_Y + 6.8;
   const campo = M(0x2e7466, { roughness: 0.95 });
   g.add(cyl(0.9, 1.4, topoY - PISO_Y - 0.6, aco, px, PISO_Y + (topoY - PISO_Y - 0.6) / 2, pz));
   g.add(box(5, 0.3, 4, M(0x4a5a60), px, PISO_Y + 0.15, pz));

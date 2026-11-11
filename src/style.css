@@ -85,3 +85,5 @@ ul.miss{margin:6px 0 0;padding-left:18px;color:#c9d2df;line-height:1.6}
 .filtros input{flex:1;min-width:200px}
 code{background:var(--panel2);padding:1px 5px;border-radius:5px}
 @media print{ header,.filtros{display:none} body,#app{height:auto;background:#fff;color:#000} #revisar{overflow:visible} .card{break-inside:avoid;background:#fff;color:#000} p,li,h2{color:#000} .muted{color:#444} }
+
+#btn-equipe{position:absolute;right:14px;top:12px;padding:7px 11px;font-size:12px;background:rgba(13,18,25,.78)}

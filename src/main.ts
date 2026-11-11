@@ -9,6 +9,7 @@ import { mesh, box } from './models/primitivas';
 import { BUILD } from './models/construtores';
 import { renderRevisar } from './revisar';
 import { validarDados } from './data/validar';
+import { criarMedico } from './models/pessoas';
 import { lerCatalogo, carregarGlb, ajustarInstrumento, criarPessoa } from './models/carregador';
 import { criarSala, criarCenaDeReflexos, PISO_Y } from './ambiente';
 
@@ -168,6 +169,34 @@ function zoneSlot(cat: CatId, k: number){
   return new THREE.Vector3(c.x, 0, c.z + 0.15 + (k - (n - 1) / 2) * 0.58);
 }
 
+/* ---------------- Equipe cirúrgica estilizada (feita no código) ---------------- */
+const animadoresPessoas: ((t: number) => void)[] = [];
+const equipeGrupo = new THREE.Group(); scene.add(equipeGrupo);
+function colocarEquipe(){
+  const equipe = [
+    // cirurgião e auxiliar de costas para o jogador, operando
+    { x: -3.2, z: -11.1, giro: Math.PI, o: { roupa: 0x2f6fa8, gorro: 0x3c8f86, pele: 0xc98f66, avental: true, maosAoAlto: true, porte: 1.08 } },
+    { x: 3.4, z: -11.1, giro: Math.PI + 0.1, o: { roupa: 0x2f6fa8, gorro: 0xd9e6f2, pele: 0xf0c6a4, avental: true, maosAoAlto: true } },
+    // anestesista do outro lado da mesa cirúrgica, de frente
+    { x: -10.5, z: -15.4, giro: 0.15, o: { roupa: 0x3b8ea5, gorro: 0xb23a48, pele: 0x8d5a3c } },
+  ];
+  for (const e of equipe){
+    const { grupo, animar } = criarMedico(e.o);
+    grupo.position.set(e.x, PISO_Y, e.z); grupo.rotation.y = e.giro; equipeGrupo.add(grupo);
+    animadoresPessoas.push(animar);
+  }
+}
+colocarEquipe();
+// botão para ocultar as pessoas (a preferência fica salva no navegador)
+{
+  const btn = el<HTMLButtonElement>('btn-equipe');
+  let on = true;
+  try { on = localStorage.getItem('mesa3d_equipe') !== '0'; } catch { /* sem armazenamento */ }
+  const aplicar = () => { equipeGrupo.visible = on; btn.textContent = `👥 Equipe: ${on ? 'ligada' : 'desligada'}`; };
+  btn.onclick = () => { on = !on; try { localStorage.setItem('mesa3d_equipe', on ? '1' : '0'); } catch { /* ok */ } aplicar(); };
+  aplicar();
+}
+
 /* ---------------- Modelos .glb opcionais (ver docs/modelos-3d.md) ---------------- */
 const misturadores: THREE.AnimationMixer[] = [];
 async function carregarModelosExternos(){
@@ -191,6 +220,7 @@ async function carregarModelosExternos(){
 }
 
 /* ---------------- Câmera animada ---------------- */
+const VISTA_MESA = { pos: new THREE.Vector3(0, 8.8, 10.6), alvo: new THREE.Vector3(0, 0.4, -1.3) };
 let fly: { pos: THREE.Vector3; target: THREE.Vector3 } | null = null;
 function flyTo(pos: THREE.Vector3, target: THREE.Vector3){ fly = { pos:pos.clone(), target:target.clone() }; }
 controls.addEventListener('start', () => { fly = null; });
@@ -247,7 +277,7 @@ navButtons.forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode
 /* --- Explorar --- */
 function startExplore(){
   layoutMesa();
-  flyTo(new THREE.Vector3(0, 7.2, 6.6), new THREE.Vector3(0, 0, 0.1));
+  flyTo(VISTA_MESA.pos, VISTA_MESA.alvo);
   hintEl.textContent = 'Arraste para girar · role para dar zoom · clique em um instrumento';
   renderExplore();
 }
@@ -257,7 +287,7 @@ function renderExplore(){
     ${selected ? infoCard(selected.d) + `<div class="row"><button class="btn" id="back">Ver a mesa inteira</button></div>` : ''}
     <h3>Tempos cirúrgicos</h3>${legendHTML()}${FOOT}`;
   const back = document.getElementById('back');
-  if (back) back.onclick = () => { selected = null; flyTo(new THREE.Vector3(0, 7.2, 6.6), new THREE.Vector3(0, 0, 0.1)); renderExplore(); };
+  if (back) back.onclick = () => { selected = null; flyTo(VISTA_MESA.pos, VISTA_MESA.alvo); renderExplore(); };
 }
 function clickExplore(o: Obj | null){
   if (!o) return;
@@ -447,6 +477,8 @@ function tick(){
   const dt = Math.min(clock.getDelta(), 0.05);
   const k = 1 - Math.exp(-dt * 9);
   for (const m of misturadores) m.update(dt);
+  const tAnim = performance.now() / 1000;
+  if (equipeGrupo.visible) for (const a of animadoresPessoas) a(tAnim);
   if (mode === 'quiz' && quiz.cur) quiz.cur.tr += dt * 0.5;
   for (const o of objs){
     const t = o.tp.clone(); t.y += o.lift + (o.lift ? Math.sin(performance.now() / 300) * 0.03 : 0);
