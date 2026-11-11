@@ -1,26 +1,36 @@
 import type { Cirurgia } from '../../types';
+import { it, preparo, preparoOpcional } from './comum';
 
-// EXEMPLO inicial: ainda precisa ser conferido com o material da disciplina.
+// Conteúdo escrito a partir de conhecimento geral; precisa ser conferido com o material da disciplina.
 export const suturaDeFerida: Cirurgia = {
   id: 'sutura-de-ferida',
   nome: 'Sutura de ferida',
-  descricao: 'Fechamento primário de uma ferida limpa de pele e subcutâneo, após antissepsia e colocação dos campos.',
+  descricao: 'Fechamento primário de uma ferida limpa de pele e subcutâneo, após antissepsia, campos e anestesia local.',
   tempos: [
-    { nome: 'Antissepsia e campos', descricao: 'Limpar a pele e delimitar o campo operatório.', pedidos: ['cheron', 'backhaus'] },
-    { nome: 'Preparo da ferida', descricao: 'Avivar as bordas, se necessário.', pedidos: ['bisturi', 'denterato'] },
-    { nome: 'Síntese', descricao: 'Aproximar as bordas com pontos e cortar o fio.', pedidos: ['denterato', 'portaagulha', 'agulha', 'mayo'] },
+    { nome: 'Antissepsia e campos', descricao: 'Limpar a pele e delimitar o campo operatório.', pedidos: ['cheron', 'cupula', 'gaze', 'campo', 'backhaus'] },
+    { nome: 'Anestesia local', descricao: 'Infiltrar anestésico nas bordas da ferida.', pedidos: ['seringa'] },
+    { nome: 'Preparo da ferida', descricao: 'Avivar as bordas, se necessário.', pedidos: ['bisturi3', 'lamina15', 'denterato'] },
+    { nome: 'Síntese', descricao: 'Aproximar as bordas com pontos e cortar o fio.', pedidos: ['denterato', 'portaagulha', 'agulhaCortante', 'fioNylon', 'spencer'] },
   ],
   essenciais: [
-    { id: 'cheron', qtd: 1, obs: 'Segura a gaze com antisséptico.' },
-    { id: 'backhaus', qtd: 4, obs: 'Fixa os campos à pele.' },
-    { id: 'denterato', qtd: 1, obs: 'Segura a pele durante a sutura.' },
-    { id: 'portaagulha', qtd: 1 },
-    { id: 'agulha', qtd: 1, obs: 'Agulha já montada com o fio.' },
+    ...preparo(10),
+    it('seringa', 1, 'Anestesia local.'),
+    it('denterato', 1, 'Segura a pele durante a sutura.'),
+    it('portaagulha', 1, 'Segura a agulha.'),
+    it('agulhaCortante', 1, 'Agulha cortante, própria para pele.'),
+    it('fioNylon', 1, 'Fio inabsorvível monofilamentar, comum na pele.'),
+    it('spencer', 1, 'Corta o fio.'),
   ],
   opcionais: [
-    { id: 'bisturi', qtd: 1, obs: 'Só se for preciso avivar as bordas.' },
-    { id: 'mayo', qtd: 1, obs: 'Corte do fio; na prática costuma haver tesoura de fios (a incluir no catálogo).' },
+    ...preparoOpcional,
+    it('adson', 1, 'Pode substituir a dente de rato em pele fina.'),
+    it('adsonDente', 1, 'Pode substituir a dente de rato.'),
+    it('bisturi3', 1, 'Só se for preciso avivar as bordas.'),
+    it('lamina15', 1, 'Lâmina para o cabo nº 3, se for avivar as bordas.'),
+    it('halsted', 1, 'Para pinçar um pequeno vaso que sangre.'),
+    it('mayo', 1, 'Pode cortar o fio, se não houver tesoura de fios.'),
+    it('agulha', 1, 'Alternativa: agulha já montada com o fio (nesse caso o fio e a agulha avulsos não são necessários).'),
   ],
   status: 'a_conferir',
-  notas: 'Quantidade de pinças de campo e escolha da tesoura variam entre serviços.',
+  notas: 'A escolha da tesoura (Spencer ou Mayo), a quantidade de pinças de campo e o tipo de fio variam entre serviços.',
 };

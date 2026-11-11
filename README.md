@@ -17,6 +17,8 @@ Depois abra o endereço que aparecer no terminal (normalmente http://localhost:5
 ## Onde fica cada coisa
 
 - `src/data/instrumentos.ts`: fichas dos instrumentos (nome, categoria, uso, como reconhecer). É aqui que se corrige conteúdo.
+- `src/data/cirurgias/`: uma cirurgia por arquivo (tempos, essenciais, opcionais e quantidades).
+- `src/pontuacao.ts`: como a mesa montada vira nota no modo Simular cirurgia.
 - `src/data/categorias.ts`: os tempos cirúrgicos e suas cores.
 - `src/models/`: desenho 3D dos instrumentos com formas básicas.
 - `src/ambiente.ts`: a sala cirúrgica (paredes, piso, lâmpada, equipamentos, paciente coberto).

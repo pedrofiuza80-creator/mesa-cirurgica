@@ -93,3 +93,14 @@ code{background:var(--panel2);padding:1px 5px;border-radius:5px}
 .tab{justify-content:flex-start;border-left-width:5px;font-weight:600}
 .tab.on{background:#222c3d;border-color:var(--accent)}
 .tab .muted{font-weight:400;margin-left:4px}
+
+/* Simular cirurgia */
+.cir{flex-direction:column;align-items:flex-start;text-align:left;gap:4px;margin-top:10px;font-weight:500}
+.cir b{font-size:15px}.cir .muted{font-size:12.5px;line-height:1.4}
+.sub{margin:6px 0 10px;color:#c9d2df}.sub summary{cursor:pointer;color:var(--accent);font-weight:600}
+#sim-q{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;margin:4px 0 6px}
+.mz{margin-top:8px}.mi{display:flex;align-items:center;gap:6px;padding:5px 6px;border-radius:8px;margin-top:4px;background:var(--panel2);border:1px solid transparent}
+.mi.on{border-color:var(--accent)}.mi-n{flex:1;cursor:pointer;font-size:13px}
+.mi b{min-width:20px;text-align:center}
+.btn.mini{padding:2px 9px;border-radius:7px;font-size:14px}
+.btn:disabled{opacity:.5;cursor:not-allowed}

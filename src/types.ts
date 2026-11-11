@@ -56,4 +56,6 @@ export interface Cirurgia {
   fontes?: string[];
   /** Observações para quem revisa (diferenças entre serviços, dúvidas). */
   notas?: string;
+  /** Explicações específicas de por que certos instrumentos NÃO são usados aqui (id → texto). Sem isso, o jogo usa o "para que serve" da ficha. */
+  naoUsar?: Record<string, string>;
 }

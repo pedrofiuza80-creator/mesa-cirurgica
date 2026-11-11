@@ -2,12 +2,14 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import './style.css';
 
-import type { CatId, Instrumento } from './types';
+import type { CatId, Cirurgia, Instrumento } from './types';
 import { CATS, ZONE_ORDER } from './data/categorias';
 import { INSTR } from './data/instrumentos';
 import { mesh, box } from './models/primitivas';
 import { BUILD_ALL as BUILD } from './models/todos';
 import { renderRevisar } from './revisar';
+import { CIRURGIAS } from './data/cirurgias';
+import { avaliarMesa, MAX, zonasCertas, type Avaliacao, type Colocado } from './pontuacao';
 import { validarDados } from './data/validar';
 import { criarMedico } from './models/pessoas';
 import { lerCatalogo, carregarGlb, ajustarInstrumento, criarPessoa } from './models/carregador';
@@ -129,6 +131,8 @@ pernas(tray, 0, 5.3, 9.0, 4.6);
   tray.add(box(9.0, 0.16, 0.1, tm, 0, 0.02, TRAY_Z + 2.3));
   tray.add(box(0.1, 0.16, 4.6, tm, -4.5, 0.02, TRAY_Z));
   tray.add(box(0.1, 0.16, 4.6, tm, 4.5, 0.02, TRAY_Z));
+  // forro azul escuro sobre a bandeja (dá contraste ao metal e lembra o pano da mesa)
+  tray.add(box(8.8, 0.014, 4.4, new THREE.MeshStandardMaterial({ color:0x24485a, roughness:0.95 }), 0, 0.003, TRAY_Z));
 }
 const traySlots: THREE.Vector3[] = [];
 for (let r = 0; r < 5; r++) for (let c = 0; c < 3; c++) traySlots.push(new THREE.Vector3((c - 1) * 2.9, 0, TRAY_Z + (r - 2) * 0.84));
@@ -253,7 +257,7 @@ function infoCard(d: Instrumento){
 const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
 /* ---------------- Modos ---------------- */
-type Mode = 'explorar' | 'quiz' | 'montar' | 'revisar';
+type Mode = 'simular' | 'explorar' | 'quiz' | 'montar' | 'revisar';
 let mode: Mode | null = null, selected: Obj | null = null, hovered: Obj | null = null;
 
 const navButtons = document.querySelectorAll<HTMLButtonElement>('nav button');
@@ -282,9 +286,10 @@ function setMode(m: Mode){
   normalizeRot();
   document.querySelector('main')!.style.display = m === 'revisar' ? 'none' : '';
   el('revisar').classList.toggle('on', m === 'revisar');
-  for (const c of ZONE_ORDER){ zones[c].mesh.visible = m === 'montar'; zones[c].flash.visible = m === 'montar'; }
-  mesa.visible = m !== 'quiz'; tray.visible = m === 'montar'; pedestal.visible = m === 'quiz';
+  for (const c of ZONE_ORDER){ const z = m === 'montar' || m === 'simular'; zones[c].mesh.visible = z; zones[c].flash.visible = z; }
+  mesa.visible = m !== 'quiz'; tray.visible = m === 'montar' || m === 'simular'; pedestal.visible = m === 'quiz';
   clearInterval(montar.timer);
+  if (m === 'simular') startSimular();
   if (m === 'explorar') startExplore();
   if (m === 'quiz') startQuiz();
   if (m === 'montar') startMontar();
@@ -462,6 +467,163 @@ function clickMontar(o: Obj | null, zoneCat: CatId | null | undefined){
   renderMontar();
 }
 
+/* --- Simular cirurgia (fase 1: montar a mesa para uma cirurgia) --- */
+const sim = { cir: null as Cirurgia | null, placed: new Map<string, Colocado>(), sel: null as Obj | null,
+  tab: 'dierese' as CatId, busca: '', done: false, res: null as Avaliacao | null };
+const VISTA_MONTAR = { pos: new THREE.Vector3(0, 14.5, 12.2), alvo: new THREE.Vector3(0, 0, 3.1) };
+const nomeInstr = (id: string) => INSTR.find(i => i.id === id)?.nome ?? id;
+const simKey = (id: string) => `mesa3d_sim_${id}`;
+function getSimBest(id: string){ try { return Number(localStorage.getItem(simKey(id))) || 0; } catch { return 0; } }
+function setSimBest(id: string, v: number){ try { localStorage.setItem(simKey(id), String(v)); } catch { /* sem armazenamento */ } }
+
+function resetSimObjs(){
+  for (const o of objs){ o.placed = false; o.lift = 0; o.tr = 0; o.ts = 1; o.g.visible = false; }
+  sim.placed.clear(); sim.sel = null; selected = null;
+}
+function startSimular(){
+  resetSimObjs(); sim.cir = null; sim.done = false; sim.res = null; sim.busca = '';
+  flyTo(VISTA_MONTAR.pos, VISTA_MONTAR.alvo);
+  hintEl.textContent = 'Escolha uma cirurgia no painel';
+  renderSim();
+}
+function escolherCirurgia(c: Cirurgia){
+  panel.scrollTop = 0;
+  resetSimObjs(); sim.cir = c; sim.done = false; sim.res = null; sim.tab = 'dierese'; sim.busca = '';
+  hintEl.textContent = 'Clique em um instrumento da bandeja e depois na área da mesa onde ele deve ficar';
+  layoutSim(); renderSim();
+}
+/** Instrumentos mostrados na bandeja: da aba escolhida ou do resultado da busca (máx. 20), só os que ainda não estão na mesa. */
+function simBandeja(): Obj[] {
+  const q = sim.busca.trim().toLowerCase();
+  const base = q ? objs.filter(o => o.d.nome.toLowerCase().includes(q)) : byCat[sim.tab];
+  return base.filter(o => !o.placed).slice(0, 20);
+}
+function layoutSim(){
+  const lista = sim.done ? [] : simBandeja();
+  selected = sim.sel;
+  for (const o of objs) o.g.visible = o.placed || lista.includes(o);
+  const cols = 5, rows = 4, cw = 8.2 / cols, ch = 4.0 / rows;
+  lista.forEach((o, k) => {
+    const c = k % cols, r = Math.floor(k / cols);
+    o.tp.set(-4.1 + cw * (c + 0.5), 0, TRAY_Z - 2.0 + ch * (r + 0.5));
+    o.tr = 0; o.lift = o === sim.sel ? 0.35 : 0;
+    o.ts = Math.min(1, (0.9 * cw) / o.len, (0.85 * ch) / o.wid);
+  });
+  for (const cat of ZONE_ORDER){
+    const ps = objs.filter(o => o.placed && sim.placed.get(o.d.id)?.zone === cat);
+    ps.forEach((o, k) => { const sl = zoneSlot(cat, k, ps.length, o.len); o.tp.copy(sl.p); o.ts = sl.s; o.tr = 0; o.lift = o === sim.sel ? 0.35 : 0; });
+  }
+}
+function clickSim(o: Obj | null, zoneCat: CatId | null | undefined){
+  if (!sim.cir || sim.done) return;
+  if (o){
+    if (!o.placed){ sim.sel = sim.sel === o ? null : o; layoutSim(); renderSim(); return; }
+    if (sim.sel && sim.sel !== o) zoneCat = sim.placed.get(o.d.id)!.zone;
+    else { sim.sel = sim.sel === o ? null : o; layoutSim(); renderSim(); return; }
+  }
+  if (!zoneCat){ if (sim.sel){ sim.sel = null; layoutSim(); renderSim(); } return; }
+  if (!sim.sel){ toast('Primeiro escolha um instrumento'); return; }
+  const s = sim.sel, atual = sim.placed.get(s.d.id);
+  sim.placed.set(s.d.id, { id: s.d.id, zone: zoneCat, qtd: atual?.qtd ?? 1 });
+  s.placed = true; sim.sel = null;
+  zones[zoneCat].flash.material.color.set(0xffffff); zones[zoneCat].f = 0.4;
+  toast(`${s.d.nome} → ${CATS[zoneCat].nome}`);
+  layoutSim(); renderSim();
+}
+function tirarDaMesa(id: string){
+  const o = objs.find(x => x.d.id === id); if (!o) return;
+  sim.placed.delete(id); o.placed = false; if (sim.sel === o) sim.sel = null;
+  layoutSim(); renderSim();
+}
+function finalizarSim(){
+  if (!sim.cir) return;
+  if (!sim.placed.size){ toast('Coloque ao menos um instrumento na mesa'); return; }
+  sim.res = avaliarMesa(sim.cir, [...sim.placed.values()]);
+  sim.done = true; sim.sel = null; selected = null;
+  setSimBest(sim.cir.id, Math.max(getSimBest(sim.cir.id), sim.res.nota));
+  layoutSim(); renderSim();
+}
+
+function renderSim(){
+  if (!sim.cir){
+    panel.innerHTML = `<h2>Simular cirurgia</h2>
+      <p>Escolha uma cirurgia. Primeiro você monta a mesa de instrumentação: vê todo o arsenal e escolhe só o que a cirurgia precisa, colocando cada instrumento na área certa. No fim, recebe a nota e a explicação de cada erro.</p>
+      <p class="muted">A fase 2 (operar, entregando os instrumentos que o cirurgião pede) vem a seguir.</p>
+      ${CIRURGIAS.map(c => `<button class="btn block cir" data-id="${c.id}"><b>${c.nome}</b><span class="muted">${c.descricao}</span>${getSimBest(c.id) ? `<span class="muted">Melhor nota: ${getSimBest(c.id)}</span>` : ''}</button>`).join('')}${FOOT}`;
+    panel.querySelectorAll<HTMLButtonElement>('.cir').forEach(b => b.onclick = () => escolherCirurgia(CIRURGIAS.find(c => c.id === b.dataset.id)!));
+    return;
+  }
+  if (sim.done && sim.res) return renderSimResultado(sim.cir, sim.res);
+  const c = sim.cir, q = sim.busca.trim();
+  const tabs = ZONE_ORDER.map((cat, i) => `<button class="btn tab ${!q && cat === sim.tab ? 'on' : ''}" data-cat="${cat}" style="border-color:${CATS[cat].cor}">${i + 1}. ${CATS[cat].nome}<span class="muted"> · ${byCat[cat].filter(o => !o.placed).length}</span></button>`).join('');
+  const sel = sim.sel;
+  const selHtml = sel ? infoCard(sel.d) + (sel.placed
+    ? `<p class="muted" style="margin-top:8px">Está na área <b>${CATS[sim.placed.get(sel.d.id)!.zone].nome}</b>. Clique em outra área para mover.</p><div class="row"><button class="btn" id="sim-devolver">Devolver à bandeja</button></div>`
+    : `<p class="muted" style="margin-top:8px">Agora clique na área da mesa onde ele deve ficar.</p>`) : '';
+  const itens = ZONE_ORDER.map(cat => {
+    const l = [...sim.placed.values()].filter(x => x.zone === cat);
+    if (!l.length) return '';
+    return `<div class="mz">${`<span class="chip" style="background:${CATS[cat].cor}">${CATS[cat].nome}</span>`}${l.map(x => `<div class="mi ${sel && sel.d.id === x.id ? 'on' : ''}" data-id="${x.id}"><span class="mi-n">${nomeInstr(x.id)}</span>
+      <button class="btn mini" data-act="menos" data-id="${x.id}" aria-label="Menos">−</button><b>${x.qtd}</b><button class="btn mini" data-act="mais" data-id="${x.id}" aria-label="Mais">+</button><button class="btn mini" data-act="tirar" data-id="${x.id}" aria-label="Tirar da mesa">✕</button></div>`).join('')}</div>`;
+  }).join('');
+  panel.innerHTML = `<h2>${c.nome}</h2>
+    <p class="muted">${c.descricao}</p>
+    <details class="sub"><summary>Tempos desta cirurgia (${c.tempos.length})</summary><ol class="miss">${c.tempos.map(t => `<li><b>${t.nome}</b>: ${t.descricao}</li>`).join('')}</ol></details>
+    <p>Monte a mesa: escolha na bandeja o que a cirurgia precisa, na quantidade certa, e coloque cada instrumento na área correta.</p>
+    <input id="sim-q" type="search" placeholder="Buscar instrumento…" value="${q.replace(/"/g, '&quot;')}">
+    <div class="tabs">${tabs}</div>
+    ${q ? `<p class="muted" style="margin-top:8px">Mostrando a busca (até 20 resultados).</p>` : `<p class="muted" style="margin-top:8px">${CATS[sim.tab].desc}</p>`}
+    ${selHtml}
+    <h3>Sua mesa (${sim.placed.size} instrumentos)</h3>
+    ${itens || '<p class="muted">Nada na mesa ainda.</p>'}
+    <div class="row"><button class="btn primary" id="sim-fim">Finalizar e ver a nota</button></div>
+    <div class="row"><button class="btn" id="sim-reset">Recomeçar</button><button class="btn" id="sim-trocar">Outra cirurgia</button></div>${FOOT}`;
+  const qi = el<HTMLInputElement>('sim-q');
+  qi.oninput = () => { sim.busca = qi.value; const p = qi.selectionStart ?? qi.value.length; layoutSim(); renderSim(); const n = el<HTMLInputElement>('sim-q'); n.focus(); n.setSelectionRange(p, p); };
+  panel.querySelectorAll<HTMLButtonElement>('.tab').forEach(b => b.onclick = () => { sim.tab = b.dataset.cat as CatId; sim.busca = ''; layoutSim(); renderSim(); });
+  panel.querySelectorAll<HTMLElement>('.mi-n').forEach(n => n.onclick = () => { const id = (n.parentElement as HTMLElement).dataset.id!; const o = objs.find(x => x.d.id === id)!; sim.sel = sim.sel === o ? null : o; layoutSim(); renderSim(); });
+  panel.querySelectorAll<HTMLButtonElement>('[data-act]').forEach(b => b.onclick = () => {
+    const id = b.dataset.id!, x = sim.placed.get(id); if (!x) return;
+    if (b.dataset.act === 'mais') x.qtd = Math.min(20, x.qtd + 1);
+    else if (b.dataset.act === 'menos') x.qtd = Math.max(1, x.qtd - 1);
+    else return tirarDaMesa(id);
+    renderSim();
+  });
+  const dv = document.getElementById('sim-devolver'); if (dv) dv.onclick = () => { if (sim.sel) tirarDaMesa(sim.sel.d.id); };
+  el('sim-fim').onclick = finalizarSim;
+  el('sim-reset').onclick = () => escolherCirurgia(c);
+  el('sim-trocar').onclick = () => startSimular();
+}
+
+function renderSimResultado(c: Cirurgia, r: Avaliacao){
+  const estrelas = ['', '★☆☆', '★★☆', '★★★'][r.estrelas];
+  const nome = (id: string) => nomeInstr(id);
+  const qtdTxt = (i: { id: string; qtd: number; obs?: string }) => `${i.qtd}× ${nome(i.id)}`;
+  const zonaTxt = (z: CatId[]) => z.map(x => CATS[x].nome).join(' ou ');
+  const lista = (tit: string, itens: string[], vazio = '') => itens.length ? `<h3>${tit} (${itens.length})</h3><ul class="miss">${itens.join('')}</ul>` : (vazio ? `<h3>${tit}</h3><p class="muted">${vazio}</p>` : '');
+  const best = getSimBest(c.id);
+  panel.innerHTML = `<h2>${c.nome}: resultado</h2>
+    <div class="card" style="text-align:center"><div class="stars">${estrelas}</div>
+      <h2 style="margin:6px 0 0">${r.nota} de 100</h2><p class="muted" style="margin:0">Melhor nota nesta cirurgia: ${best}</p></div>
+    <div class="stats">
+      <div class="stat"><b>${r.essenciaisCertos.length}/${r.essenciaisTotal}</b><span>Essenciais</span></div>
+      <div class="stat"><b>${r.faltaram.length}</b><span>Faltaram</span></div>
+      <div class="stat"><b>${r.desnecessarios.length}</b><span>Desnecessários</span></div></div>
+    <p class="muted" style="margin-top:10px">Posição: ${r.posicaoCertos} de ${r.posicaoTotal} na área certa · Quantidade errada: ${r.quantidadeErrada.length}</p>
+    <p class="muted" style="font-size:12px">Essenciais ${Math.round(r.partes.essenciais)}/${MAX.essenciais} · Posição ${Math.round(r.partes.posicao)}/${MAX.posicao} · Quantidade ${Math.round(r.partes.quantidade)}/${MAX.quantidade} · Sem desnecessários ${Math.round(r.partes.desnecessarios)}/${MAX.desnecessarios}</p>
+    ${lista('Faltaram (essenciais)', r.faltaram.map(i => `<li><b>${qtdTxt(i)}</b>${i.obs ? ` <span class="muted">— ${i.obs}</span>` : ''}</li>`), 'Nenhum essencial faltou.')}
+    ${lista('Desnecessários', r.desnecessarios.map(d => `<li><b>${nome(d.id)}</b> <span class="muted">— ${d.motivo}</span></li>`), 'Nenhum instrumento desnecessário.')}
+    ${lista('Na área errada', r.foraDoLugar.map(f => `<li><b>${nome(f.id)}</b> <span class="muted">— você pôs em ${CATS[f.escolhida].nome}; o certo é ${zonaTxt(f.certas)}.</span></li>`), 'Tudo na área certa.')}
+    ${lista('Quantidade errada', r.quantidadeErrada.map(q => `<li><b>${nome(q.id)}</b> <span class="muted">— esta cirurgia usa ${q.pediu}; você pôs ${q.colocou}.</span></li>`))}
+    ${r.opcionaisUsados.length ? `<h3>Opcionais que você incluiu (${r.opcionaisUsados.length})</h3><ul class="miss">${r.opcionaisUsados.map(i => `<li>${nome(i.id)} <span class="muted">${i.obs ? '— ' + i.obs : ''}</span></li>`).join('')}</ul>` : ''}
+    <p class="muted" style="margin-top:12px;font-size:12px">Esta lista foi escrita a partir de conhecimento geral e precisa ser conferida com o material da disciplina (veja "Revisar conteúdo"). ${c.notas ?? ''}</p>
+    <div class="row"><button class="btn primary" id="sim-again">Tentar de novo</button><button class="btn" id="sim-other">Outra cirurgia</button></div>
+    <div class="row"><button class="btn" disabled title="Em breve">Fase 2: operar (em breve)</button></div>${FOOT}`;
+  el('sim-again').onclick = () => escolherCirurgia(c);
+  el('sim-other').onclick = () => startSimular();
+  panel.scrollTop = 0;
+}
+
 /* ---------------- Interação ---------------- */
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
 function hits(ev: PointerEvent, targets: THREE.Object3D[]){
@@ -480,19 +642,20 @@ canvas.addEventListener('pointerup', e => {
   down = null;
   if (mode === 'quiz') return;
   const targets = pickables();
-  if (mode === 'montar') targets.push(...ZONE_ORDER.map(c => zones[c].mesh));
+  if (mode === 'montar' || mode === 'simular') targets.push(...ZONE_ORDER.map(c => zones[c].mesh));
   const h = hits(e, targets)[0];
-  if (!h){ if (mode === 'montar') clickMontar(null, null); return; }
+  if (!h){ if (mode === 'montar') clickMontar(null, null); else if (mode === 'simular') clickSim(null, null); return; }
   const o = objFrom(h), zoneCat = h.object.userData.zone as CatId | undefined;
   if (mode === 'explorar') clickExplore(o);
   else if (mode === 'montar') clickMontar(o, zoneCat);
+  else if (mode === 'simular') clickSim(o, zoneCat);
 });
 canvas.addEventListener('pointermove', e => {
   if (mode === 'quiz' || e.buttons) { hovered = null; tipEl.style.display = 'none'; return; }
   const h = hits(e, pickables())[0];
   hovered = h ? objFrom(h) : null;
   canvas.style.cursor = hovered ? 'pointer' : 'grab';
-  const showName = hovered && (mode === 'explorar' || (mode === 'montar' && montar.names));
+  const showName = hovered && (mode === 'explorar' || mode === 'simular' || (mode === 'montar' && montar.names));
   if (showName){
     const r = stage.getBoundingClientRect();
     tipEl.textContent = hovered!.d.nome; tipEl.style.display = 'block';
@@ -533,7 +696,7 @@ function tick(){
 camera.position.set(0, 9, 9); controls.target.set(0, 0, 0);
 onResize();
 for (const e of validarDados()) console.error('[dados]', e);
-setMode('explorar');
+setMode('simular');
 tick();
 carregarModelosExternos();
 window.__mesaOk = true;

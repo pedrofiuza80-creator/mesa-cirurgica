@@ -1,0 +1,46 @@
+import type { Cirurgia } from '../../types';
+import { it, preparo, preparoOpcional } from './comum';
+
+export const exereseLipomaCisto: Cirurgia = {
+  id: 'exerese-lipoma-cisto',
+  nome: 'Exérese de lipoma ou cisto',
+  descricao: 'Retirada de um nódulo subcutâneo (lipoma ou cisto) por incisão sobre a lesão, dissecção, hemostasia e fechamento por planos.',
+  tempos: [
+    { nome: 'Antissepsia e campos', descricao: 'Limpar a pele e delimitar o campo.', pedidos: ['cheron', 'cupula', 'gaze', 'campo', 'backhaus'] },
+    { nome: 'Anestesia local', descricao: 'Infiltrar anestésico ao redor da lesão.', pedidos: ['seringa'] },
+    { nome: 'Incisão', descricao: 'Abrir a pele sobre a lesão.', pedidos: ['bisturi3', 'lamina15', 'adsonDente'] },
+    { nome: 'Dissecção e exérese', descricao: 'Separar a lesão dos tecidos vizinhos e retirá-la.', pedidos: ['allis', 'metzenbaum', 'adsonDente', 'cubaRim'] },
+    { nome: 'Hemostasia', descricao: 'Pinçar e ligar os vasos que sangrarem.', pedidos: ['halsted', 'fioPoliglactina'] },
+    { nome: 'Síntese', descricao: 'Fechar o subcutâneo e a pele.', pedidos: ['portaagulha', 'agulhaRedonda', 'fioPoliglactina', 'agulhaCortante', 'fioNylon', 'spencer'] },
+  ],
+  essenciais: [
+    ...preparo(15),
+    it('seringa', 1, 'Anestesia local.'),
+    it('bisturi3', 1, 'Cabo para a lâmina pequena.'),
+    it('lamina15', 1, 'Incisão da pele.'),
+    it('adsonDente', 1, 'Segura a pele.'),
+    it('allis', 2, 'Tracionam a lesão durante a dissecção.'),
+    it('metzenbaum', 1, 'Dissecção dos planos ao redor da lesão.'),
+    it('halsted', 4, 'Mosquitos para pinçar vasos pequenos.'),
+    it('cubaRim', 1, 'Recebe a peça para enviar à anatomia patológica.'),
+    it('portaagulha', 1),
+    it('agulhaRedonda', 1, 'Subcutâneo.'),
+    it('agulhaCortante', 1, 'Pele.'),
+    it('fioPoliglactina', 1, 'Fio absorvível para o subcutâneo e ligaduras.'),
+    it('fioNylon', 1, 'Pele.'),
+    it('spencer', 1, 'Corta os fios.'),
+  ],
+  opcionais: [
+    ...preparoOpcional,
+    it('kelly', 2, 'Hemostasia de vasos um pouco maiores.'),
+    it('iris', 1, 'Dissecção fina, se a lesão for superficial.'),
+    it('farabeuf', 2, 'Afastam as bordas da incisão.'),
+    it('senn', 2, 'Afastam as bordas da incisão.'),
+    it('ganchoPele', 2, 'Afastam a pele em incisões pequenas.'),
+    it('cureta', 1, 'Pode ajudar a esvaziar um cisto.'),
+    it('fioMonocryl', 1, 'Alternativa para sutura intradérmica.'),
+    it('bisturi', 1, 'Cabo nº 4, se usar lâmina maior.'),
+  ],
+  status: 'a_conferir',
+  notas: 'O tamanho e a profundidade da lesão mudam o arsenal (afastadores, dreno). A escolha do fio da pele varia entre serviços.',
+};
