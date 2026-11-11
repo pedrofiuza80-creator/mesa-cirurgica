@@ -317,6 +317,113 @@ function campo(): G {
   return g;
 }
 
+
+/* ---------- instrumentos da apostila (novos) ---------- */
+function bisturiDescartavel(): G {
+  const g = newG(), plastico = M(0x6fb4e0, { roughness: 0.5 }), dk = MAT.dark();
+  g.add(plate([[0, -0.04], [1.05, -0.05], [1.12, -0.03], [1.12, 0.03], [1.05, 0.05], [0, 0.04]], 0.035, plastico, 0.005));
+  for (let i = 0; i < 9; i++) g.add(box(0.01, 0.008, 0.07, M(0x4b92c2), 0.5 + i * 0.045, 0.043, 0));
+  g.add(box(0.08, 0.012, 0.025, dk, 0.2, 0.043, 0));
+  g.add(plate([[1.1, -0.03], [1.58, -0.034], [1.46, 0.02], [1.34, 0.06], [1.2, 0.065], [1.1, 0.04]], 0.007, MAT.blade(), 0.02));
+  return g;
+}
+function bisturiEletrico(): G {
+  const g = newG(), branco = M(0xf1f4f6, { roughness: 0.4 });
+  const c = mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.2, 14), branco); c.rotation.z = Math.PI / 2; c.position.set(0.6, 0.05, 0); g.add(c);
+  const ponta = mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.5, 8), MAT.steel()); ponta.rotation.z = Math.PI / 2; ponta.position.set(1.4, 0.05, 0); g.add(ponta);
+  const cone1 = cone(0.05, 0.1, branco); cone1.rotation.z = -Math.PI / 2; cone1.position.set(1.22, 0.05, 0); g.add(cone1);
+  for (const [x, cor] of [[0.78, 0xf2c94c], [0.62, 0x2f6fd0]] as [number, number][]) { const b = mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.02, 12), M(cor)); b.position.set(x, 0.1, 0); g.add(b); }
+  const pts = [[0, 0.05, 0], [-0.2, 0.04, 0.18], [-0.5, 0.04, -0.15], [-0.8, 0.04, 0.22], [-1.2, 0.04, -0.1], [-1.5, 0.04, 0.12]].map(([x, y, z]) => new THREE.Vector3(x, y, z));
+  g.add(mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 60, 0.02, 8, false), M(0x2f6fd0)));
+  return g;
+}
+const harrington = () => pl([[0, -0.05], [1.2, -0.05], [1.45, -0.22], [1.8, -0.3], [2.05, -0.22], [2.1, -0.06], [2.0, 0.0], [2.1, 0.06], [2.05, 0.22], [1.8, 0.3], [1.45, 0.22], [1.2, 0.05], [0, 0.05]]);
+function suprapubica(): G {
+  const g = pl([[0, -0.04], [1.3, -0.04], [1.55, -0.2], [1.75, -0.45], [1.95, -0.42], [2.0, 0], [1.95, 0.42], [1.75, 0.45], [1.55, 0.2], [1.3, 0.04], [0, 0.04]]);
+  g.add(ring(-0.06, 0, 0.07, 0.017, MAT.steel(), 0.02));
+  g.add(bar([-0.0, -0.1], [-0.0, 0.1], 0.03, 0.03, MAT.steel(), 0.02));
+  return g;
+}
+function especuloVaginal(): G {
+  const g = newG(), m = MAT.steel(), dk = MAT.dark();
+  for (const s of [-1, 1]) {
+    g.add(bar([0.1, s * 0.05], [1.5, s * 0.42], 0.2, 0.03, m, 0.03));
+    g.add(bar([-0.35, s * 0.1], [0.12, s * 0.05], 0.06, 0.03, m, 0.03));
+  }
+  g.add(box(0.15, 0.06, 0.2, m, 0.1, 0.04, 0));
+  const parafuso = mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.45, 8), dk); parafuso.rotation.z = Math.PI / 2; parafuso.position.set(-0.35, 0.05, 0); g.add(parafuso);
+  g.add(box(0.1, 0.02, 0.22, m, -0.62, 0.05, 0));
+  return g;
+}
+function pean(): G {
+  return ringInstrument({ L: 1.2, jawLen: 0.3, ratchet: true, ringR: 0.1, tube: 0.02, sep: 0.13, shankW: 0.034, jaw: loopJaw({ jl: 0.3, w: 0.1 }) });
+}
+function tentacanula(): G {
+  const g = newG(), m = MAT.steel();
+  const r = mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.5, 10), m); r.rotation.z = Math.PI / 2; r.position.set(0.75, 0.03, 0); g.add(r);
+  g.add(plate([[1.5, -0.1], [1.62, -0.125], [1.74, -0.07], [1.76, -0.016], [1.62, -0.016], [1.62, 0.016], [1.76, 0.016], [1.74, 0.07], [1.62, 0.125], [1.5, 0.1]], 0.012, m, 0.02));
+  return g;
+}
+function sacaFibroma(): G {
+  const g = newG(), m = MAT.steel();
+  const t = mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 12), MAT.dark()); t.rotation.x = Math.PI / 2; t.position.set(0, 0.04, 0); g.add(t);
+  const r = mesh(new THREE.CylinderGeometry(0.014, 0.014, 1.5, 8), m); r.rotation.z = Math.PI / 2; r.position.set(0.75, 0.04, 0); g.add(r);
+  const pts: THREE.Vector3[] = [];
+  for (let k = 0; k <= 36; k++) { const a = (k / 36) * Math.PI * 6; pts.push(new THREE.Vector3(1.5 + k * 0.012, 0.09 + Math.sin(a) * 0.075, Math.cos(a) * 0.075)); }
+  g.add(mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 120, 0.014, 8, false), m));
+  return g;
+}
+const faure = () => hem(1.9, 0.42, 0.065, 0.08, 'full', { shankW: 0.045 }, j => withTeeth(j, 0.42));
+function histerolaboJaw(): JawFn {
+  return (g, px, { m, y }) => {
+    for (const s of [-1, 1]) {
+      const geo = new THREE.TorusGeometry(0.2, 0.02, 8, 24, Math.PI * 1.55); geo.rotateX(Math.PI / 2);
+      const a = mesh(geo, m); a.position.set(px + 0.24, y, s * 0.2); a.rotation.y = s > 0 ? Math.PI * 0.72 : -Math.PI * 0.72 + Math.PI; g.add(a);
+    }
+  };
+}
+function pincelAntissepsia(): G {
+  const g = ringInstrument({ L: 2.0, jawLen: 0.7, ratchet: true, jaw: foersterJaw(0.7) });
+  const gz = mesh(new THREE.SphereGeometry(0.17, 14, 10), M(0xf3f3ef, { roughness: 1 }));
+  gz.scale.set(1.3, 0.8, 1.1); gz.position.set(2.0 - 0.1, 0.05, 0); g.add(gz);
+  return g;
+}
+function forkJaw(jl: number): JawFn {
+  return (g, px, { m, y }) => {
+    for (const s of [-1, 1]) {
+      g.add(bar([px, s * 0.012], [px + jl * 0.5, s * 0.07], 0.04, 0.03, m, y));
+      for (let k = -1; k <= 1; k++) g.add(bar([px + jl * 0.5, s * 0.07 + k * 0.035], [px + jl, s * 0.07 + k * 0.035], 0.02, 0.03, m, y));
+    }
+  };
+}
+const pincaCirculante = () => ringInstrument({ L: 2.0, jawLen: 0.45, ringR: 0.1, sep: 0.12, shankW: 0.04, jaw: forkJaw(0.45) });
+function manopla(): G {
+  const g = newG(), m = M(0xe9eef0, { metalness: 0.4, roughness: 0.3 });
+  const d = mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.05, 28), m); d.position.set(0, 0.025, 0); g.add(d);
+  const c = mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.6, 16), m); c.rotation.z = Math.PI / 2 - 0.5; c.position.set(0.18, 0.2, 0); g.add(c);
+  return g;
+}
+function caixaCirurgica(): G {
+  const g = newG(), m = M(0xdfe4e8, { metalness: 0.75, roughness: 0.35 }), dk = MAT.dark();
+  g.add(box(1.5, 0.3, 0.8, m, 0, 0.15, 0));
+  g.add(box(1.54, 0.06, 0.84, m, 0, 0.33, 0));
+  for (let i = 0; i < 7; i++) for (let j = 0; j < 4; j++) g.add(box(0.03, 0.01, 0.03, dk, -0.6 + i * 0.2, 0.366, -0.27 + j * 0.18));
+  const alca = new THREE.TorusGeometry(0.14, 0.018, 8, 20, Math.PI); alca.rotateX(0);
+  const a = mesh(alca, m); a.position.set(0, 0.36, 0); a.rotation.y = Math.PI / 2; g.add(a);
+  return g;
+}
+function aspiradorCanulas(): G {
+  const g = newG(), m = M(0xdfe4e8, { metalness: 0.7, roughness: 0.35 });
+  const curve = new THREE.CatmullRomCurve3([[0.2, 0.05, 0], [0.7, 0.05, 0], [1.0, 0.05, -0.1], [1.3, 0.05, -0.32]].map(([x, y, z]) => new THREE.Vector3(x, y, z)));
+  g.add(mesh(new THREE.TubeGeometry(curve, 24, 0.03, 10, false), m));
+  const b = mesh(new THREE.SphereGeometry(0.055, 12, 10), m); b.position.set(1.3, 0.05, -0.32); g.add(b);
+  const conn = mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.25, 14), MAT.dark()); conn.rotation.z = Math.PI / 2; conn.position.set(0.1, 0.05, 0); g.add(conn);
+  const pts: THREE.Vector3[] = [];
+  for (let k = 0; k <= 40; k++) { const a = (k / 40) * Math.PI * 4; pts.push(new THREE.Vector3(-0.5 + Math.cos(a) * 0.3 - k * 0.012, 0.04 + (k % 2) * 0.0, 0.5 + Math.sin(a) * 0.3)); }
+  g.add(mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 100, 0.025, 8, false), M(0xeceeea, { roughness: 0.4, transparent: true, opacity: 0.85 })));
+  return g;
+}
+
 /* ---------- tabela de construtores ---------- */
 export const EXTRAS: Record<string, () => G> = {
   // diérese
@@ -380,6 +487,10 @@ export const EXTRAS: Record<string, () => G> = {
   fioPolidioxanona:() => fioPacote(0x8660c9, 0x8660c9, false),
   fioMonocryl:     () => fioPacote(0xe6e0f0, 0x7a58b8, false),
   fioAco:          () => fioPacote(0xb8bec6, 0x888f99, false, true),
+  // apostila (novos)
+  bisturiDescartavel, bisturiEletrico, harrington, suprapubica, especuloVaginal, pean, tentacanula, sacaFibroma, faure,
+  histerolabo:     () => ringInstrument({ L: 1.8, jawLen: 0.45, ratchet: true, jaw: histerolaboJaw() }),
+  pincelAntissepsia, pincaCirculante, manopla, caixaCirurgica,
   // especiais
   foerster:        () => ringInstrument({ L: 1.9, jawLen: 0.7, ratchet: true, jaw: foersterJaw(0.7) }),
   doyenIntestinal: () => hem(1.8, 0.95, 0.07, 0.04, 'full', { shankW: 0.05 }),
@@ -390,7 +501,7 @@ export const EXTRAS: Record<string, () => G> = {
   compressa:       () => pilha(0.95, 0.85, 4, 0xf0efe8, 0x3d6fd0),
   campo,
   seringa,
-  aspirador,
+  aspirador: aspiradorCanulas,
   sondaCanelada,
   sondaExploradora,
   cureta,

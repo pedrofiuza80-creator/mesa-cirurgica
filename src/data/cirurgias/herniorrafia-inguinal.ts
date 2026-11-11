@@ -1,31 +1,32 @@
 import type { Cirurgia } from '../../types';
-import { it, preparo, preparoOpcional } from './comum';
+import { it, preparo, preparoOpcional, reparo } from './comum';
 
 export const herniorrafiaInguinal: Cirurgia = {
   id: 'herniorrafia-inguinal',
   nome: 'Herniorrafia inguinal',
   descricao: 'Correção de hérnia na região da virilha: incisão, abertura da aponeurose, isolamento do cordão espermático, tratamento do saco herniário, reforço da parede posterior e fechamento por planos.',
   tempos: [
-    { nome: 'Antissepsia e campos', descricao: 'Limpar a região e delimitar o campo.', pedidos: ['cheron', 'cupula', 'gaze', 'campo', 'backhaus'] },
-    { nome: 'Anestesia e incisão', descricao: 'Anestesia local (quando for o caso) e incisão inguinal.', pedidos: ['seringa', 'bisturi', 'lamina22', 'denterato'] },
+    { nome: 'Antissepsia e campos', descricao: 'Limpar a região e delimitar o campo.', pedidos: ['foerster', 'cupula', 'gaze', 'campo', 'backhaus'] },
+    { nome: 'Anestesia e incisão', descricao: 'Anestesia local (quando for o caso) e incisão inguinal.', pedidos: ['seringa', 'bisturi', 'lamina22', 'halstedReta', 'denterato'] },
     { nome: 'Abertura da aponeurose', descricao: 'Abrir a aponeurose do músculo oblíquo externo, expondo o canal inguinal.', pedidos: ['mayo', 'kocher', 'kelly', 'farabeuf'] },
     { nome: 'Isolamento do cordão', descricao: 'Separar e proteger o cordão espermático, tracionando-o com um dreno.', pedidos: ['metzenbaum', 'kelly', 'drenoPenrose', 'anatomica'] },
     { nome: 'Saco herniário', descricao: 'Identificar, abrir ou reduzir o saco e fazer a ligadura alta.', pedidos: ['kelly', 'halsted', 'metzenbaum', 'portaagulha', 'fioPoliglactina'] },
     { nome: 'Reparo da parede posterior', descricao: 'Reforçar a parede com pontos de fio inabsorvível (técnica de acordo com o serviço).', pedidos: ['portaagulha', 'agulhaCortante', 'fioPolipropileno'] },
-    { nome: 'Fechamento', descricao: 'Fechar a aponeurose, o subcutâneo e a pele.', pedidos: ['portaagulha', 'fioPoliglactina', 'agulhaCortante', 'fioNylon', 'spencer'] },
+    { nome: 'Fechamento', descricao: 'Fechar a aponeurose, o subcutâneo e a pele.', pedidos: ['portaagulha', 'fioPoliglactina', 'agulhaCortante', 'fioNylon', 'mayo'] },
   ],
   essenciais: [
     ...preparo(15),
     it('seringa', 1, 'Anestesia local, quando usada.'),
     it('bisturi', 1, 'Cabo nº 4.'),
     it('lamina22', 1, 'Incisão da pele.'),
+    reparo,
     it('denterato', 1, 'Segura a pele.'),
     it('anatomica', 1, 'Dissecção do cordão e do saco.'),
-    it('mayo', 1, 'Corta a aponeurose.'),
+    it('mayo', 1, 'Mayo reta: corta a aponeurose e os fios.'),
     it('metzenbaum', 1, 'Dissecção dos planos.'),
     it('kelly', 4, 'Hemostasia e pinçar o saco herniário.'),
     it('halsted', 2, 'Vasos pequenos.'),
-    it('allis', 2, 'Seguram as bordas da aponeurose.'),
+    it('kocher', 2, 'Seguram as bordas da aponeurose.'),
     it('farabeuf', 2, 'Afastam os planos superficiais.'),
     it('drenoPenrose', 1, 'Usado para tracionar e proteger o cordão espermático.'),
     it('portaagulha', 2),
@@ -33,11 +34,11 @@ export const herniorrafiaInguinal: Cirurgia = {
     it('fioPolipropileno', 1, 'Fio inabsorvível para o reparo da parede.'),
     it('fioPoliglactina', 1, 'Aponeurose, subcutâneo e ligadura do saco.'),
     it('fioNylon', 1, 'Pele.'),
-    it('spencer', 1, 'Corta os fios.'),
   ],
   opcionais: [
     ...preparoOpcional,
-    it('kocher', 2, 'Seguram a aponeurose.'),
+    it('allis', 2, 'Podem segurar as bordas da aponeurose.'),
+    it('spencer', 1, 'Tesoura de fios (não consta na apostila).'),
     it('weitlaner', 1, 'Afastador autoestático para o campo.'),
     it('gelpi', 1, 'Afastador autoestático.'),
     it('volkmann', 2, 'Afastador de garras para planos superficiais.'),

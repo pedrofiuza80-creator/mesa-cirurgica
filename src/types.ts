@@ -23,6 +23,10 @@ export interface Instrumento {
    * `nota` = explicação mostrada na ficha e na página de revisão.
    */
   variacao?: { tambem: CatId[]; nota: string };
+  /** Página da apostila da disciplina (CINST) em que o instrumento aparece. Sem este campo, ele não consta na apostila. */
+  apostila?: number;
+  /** Subgrupo dentro de um tempo, quando a apostila separa (ex.: ginecológicos, anexos). */
+  grupo?: 'ginecologico' | 'anexo';
   /** Se omitido, vale 'a_conferir'. */
   status?: Status;
   /** Livros ou materiais usados para conferir (texto livre). */

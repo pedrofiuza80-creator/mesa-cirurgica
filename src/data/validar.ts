@@ -24,6 +24,10 @@ export function validarDados(): string[] {
     const usados = [...c.essenciais, ...c.opcionais].map(i => i.id);
     for (const t of c.tempos) usados.push(...t.pedidos);
     for (const id of usados) if (!ids.has(id)) erros.push(`${c.nome}: instrumento inexistente "${id}"`);
+    for (const lista of [c.essenciais, c.opcionais]){
+      const vistos = new Set<string>();
+      for (const i of lista){ if (vistos.has(i.id)) erros.push(`${c.nome}: "${i.id}" aparece duas vezes na mesma lista`); vistos.add(i.id); }
+    }
     for (const i of c.essenciais) if (c.opcionais.some(o => o.id === i.id)) erros.push(`${c.nome}: "${i.id}" está em essenciais e em opcionais`);
     for (const i of [...c.essenciais, ...c.opcionais]) if (!(i.qtd >= 1)) erros.push(`${c.nome}: quantidade inválida para "${i.id}"`);
   }

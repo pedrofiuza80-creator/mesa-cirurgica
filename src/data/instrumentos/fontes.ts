@@ -9,3 +9,6 @@ export const FONTE = {
   medicalBabcock: 'Catálogo MedicalExpo, pinças Babcock: https://www.medicalexpo.com/pt/fabricante-medico/pinca-babcock-31481.html',
   grasping: 'Surgical Technology: Grasping Instruments: https://bensonhsu2013.github.io/RevisionSite/operativereview.com/grasping-instruments/index.html',
 };
+
+/** Referência à apostila da disciplina (Curso de Instrumentação Cirúrgica, CINST), a fonte principal. */
+export const APOSTILA = (pagina: number) => `Apostila CINST (material da disciplina), p. ${pagina}`;

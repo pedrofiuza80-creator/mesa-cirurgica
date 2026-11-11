@@ -75,7 +75,7 @@ ul.miss{margin:6px 0 0;padding-left:18px;color:#c9d2df;line-height:1.6}
 #revisar.on{display:block}
 .rev{max-width:900px;margin:0 auto}
 .rtop{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.rtop .st{margin-left:auto}
+.rtop h2{flex:1;min-width:140px}
 .st{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;border:1px solid var(--line)}
 .st.ok{color:var(--ok);border-color:var(--ok)} .st.todo{color:#f2c14e;border-color:#f2c14e}
 .aviso{background:rgba(242,193,78,.1);border:1px solid #f2c14e;border-radius:8px;padding:8px 10px}
@@ -104,3 +104,4 @@ code{background:var(--panel2);padding:1px 5px;border-radius:5px}
 .mi b{min-width:20px;text-align:center}
 .btn.mini{padding:2px 9px;border-radius:7px;font-size:14px}
 .btn:disabled{opacity:.5;cursor:not-allowed}
+#btn-apostila{position:absolute;right:14px;top:50px;padding:7px 11px;font-size:12px;background:rgba(13,18,25,.78)}

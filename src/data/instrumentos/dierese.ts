@@ -1,14 +1,8 @@
 import type { Instrumento } from '../../types';
 import { FONTE } from './fontes';
 
-/** Diérese: cortar e separar tecidos. */
+/** Diérese: instrumentos COMPLEMENTARES, que não constam na apostila da disciplina (os da apostila estão em apostila.ts). */
 export const DIERESE: Instrumento[] = [
-  { id:'bisturi', nome:'Cabo de bisturi nº 4 com lâmina', cat:'dierese',
-    uso:'Incisão da pele e dos tecidos. O cabo nº 3 recebe lâminas pequenas (10 a 15) e o nº 4 recebe as maiores (20 a 25).',
-    dica:'Cabo achatado com área serrilhada para a empunhadura; a lâmina encaixa na ponta.' },
-  { id:'bisturi3', nome:'Cabo de bisturi nº 3', cat:'dierese',
-    uso:'Cabo mais curto e estreito, que recebe as lâminas pequenas (nº 10, 11, 12 e 15). Usado em incisões pequenas e precisas.',
-    dica:'Parecido com o nº 4, porém menor e mais fino; a empunhadura também é serrilhada.' },
   { id:'lamina11', nome:'Lâmina de bisturi nº 11', cat:'dierese',
     uso:'Lâmina pontiaguda, em triângulo alongado, para incisões pequenas e precisas (por exemplo, drenagem de abscesso e punções). Encaixa no cabo nº 3.',
     dica:'Ponta afilada em triângulo, quase sem "barriga" de corte.' },
@@ -18,21 +12,9 @@ export const DIERESE: Instrumento[] = [
   { id:'lamina22', nome:'Lâmina de bisturi nº 22', cat:'dierese',
     uso:'Lâmina grande, de corte amplo e curvo, para incisões longas e planos mais profundos. Encaixa no cabo nº 4.',
     dica:'A maior das lâminas aqui; barriga larga e bem arredondada.' },
-  { id:'mayo', nome:'Tesoura de Mayo', cat:'dierese',
-    uso:'Tesoura robusta para tecidos mais resistentes, como a aponeurose.',
-    dica:'Lâminas largas e grossas, longas em relação ao cabo.' },
-  { id:'mayocurva', nome:'Tesoura de Mayo curva', cat:'dierese',
-    uso:'Mesma tesoura robusta, com lâminas curvas, para cortar tecidos resistentes (aponeurose, músculo). A curva ajuda a enxergar a ponta no campo.',
-    dica:'Igual à Mayo reta, porém com as lâminas encurvadas.' },
-  { id:'metzenbaum', nome:'Tesoura de Metzenbaum', cat:'dierese',
-    uso:'Tesoura delicada para dissecção de tecidos finos.',
-    dica:'Cabo longo e lâminas curtas e finas, geralmente curvas.' },
   { id:'metzenbaumLonga', nome:'Tesoura de Metzenbaum longa', cat:'dierese',
     uso:'Versão de cabo mais longo da Metzenbaum, para dissecar tecidos delicados em cavidades profundas (abdome, tórax, pelve).',
     dica:'Mesmo desenho delicado da Metzenbaum, porém bem mais comprida.' },
-  { id:'iris', nome:'Tesoura Íris', cat:'dierese',
-    uso:'Tesoura pequena e fina, de lâminas pontiagudas, para cortar e dissecar tecidos muito delicados (cirurgia plástica, oftalmológica, pequenos planos).',
-    dica:'Curta (cerca de 11 cm), fina e pontuda; bem menor que a Metzenbaum.' },
   { id:'potts', nome:'Tesoura de Potts-Smith', cat:'dierese',
     uso:'Tesoura de lâminas anguladas usada em cirurgia vascular para abrir (arteriotomia) vasos no sentido do comprimento.',
     dica:'As lâminas formam um ângulo com o cabo; delicada e pontuda.' },

@@ -1,28 +1,29 @@
 import type { Cirurgia } from '../../types';
-import { it, preparo, preparoOpcional } from './comum';
+import { it, preparo, preparoOpcional, reparo } from './comum';
 
 export const apendicectomiaAberta: Cirurgia = {
   id: 'apendicectomia-aberta',
   nome: 'Apendicectomia aberta',
   descricao: 'Retirada do apêndice cecal por incisão na fossa ilíaca direita, abrindo a parede por planos, tratando o mesoapêndice e a base do apêndice, e fechando por planos.',
   tempos: [
-    { nome: 'Antissepsia e campos', descricao: 'Limpar o abdome e delimitar o campo.', pedidos: ['cheron', 'cupula', 'gaze', 'campo', 'backhaus'] },
-    { nome: 'Incisão e abertura por planos', descricao: 'Incisão na fossa ilíaca direita; abrir pele, aponeurose, músculos e peritônio.', pedidos: ['bisturi', 'lamina22', 'denterato', 'mayo', 'farabeuf', 'kelly', 'allis'] },
-    { nome: 'Exposição do apêndice', descricao: 'Localizar o ceco e o apêndice e trazê-los para o campo.', pedidos: ['babcock', 'anatomica', 'compressa'] },
+    { nome: 'Antissepsia e campos', descricao: 'Limpar o abdome e delimitar o campo.', pedidos: ['foerster', 'cupula', 'gaze', 'campo', 'backhaus'] },
+    { nome: 'Incisão e abertura por planos', descricao: 'Incisão na fossa ilíaca direita; abrir pele, aponeurose, músculos e peritônio.', pedidos: ['bisturi', 'lamina22', 'denterato', 'halstedReta', 'mayo', 'farabeuf', 'kelly', 'kocher'] },
+    { nome: 'Exposição do apêndice', descricao: 'Localizar o ceco e o apêndice e trazê-los para o campo.', pedidos: ['duval', 'anatomica', 'compressa'] },
     { nome: 'Ligadura do mesoapêndice', descricao: 'Pinçar e ligar o mesoapêndice, que leva os vasos do apêndice.', pedidos: ['kelly', 'metzenbaum', 'fioSeda'] },
     { nome: 'Apendicectomia', descricao: 'Ligar a base do apêndice, cortá-lo e colocar a peça na cuba.', pedidos: ['kelly', 'fioSeda', 'metzenbaum', 'cubaRim'] },
-    { nome: 'Revisão e fechamento', descricao: 'Revisar a hemostasia e fechar peritônio, músculos, aponeurose e pele.', pedidos: ['portaagulha', 'agulhaRedonda', 'fioPoliglactina', 'agulhaCortante', 'fioNylon', 'spencer'] },
+    { nome: 'Revisão e fechamento', descricao: 'Revisar a hemostasia e fechar peritônio, músculos, aponeurose e pele.', pedidos: ['portaagulha', 'agulhaRedonda', 'fioPoliglactina', 'agulhaCortante', 'fioNylon', 'mayo'] },
   ],
   essenciais: [
     ...preparo(20),
     it('bisturi', 1, 'Cabo nº 4.'),
     it('lamina22', 1, 'Incisão da pele.'),
+    reparo,
     it('denterato', 1, 'Segura a pele.'),
-    it('mayo', 1, 'Corta a aponeurose.'),
+    it('mayo', 1, 'Mayo reta: corta a aponeurose e os fios.'),
     it('metzenbaum', 1, 'Dissecção e corte do mesoapêndice.'),
     it('kelly', 4, 'Pinçam vasos e o mesoapêndice.'),
-    it('allis', 2, 'Seguram o peritônio e a aponeurose.'),
-    it('babcock', 1, 'Segura o apêndice sem machucá-lo.'),
+    it('kocher', 2, 'Seguram a aponeurose.'),
+    it('duval', 1, 'Segura e apresenta o apêndice vermiforme.'),
     it('anatomica', 1, 'Pinça de dissecção.'),
     it('farabeuf', 2, 'Afastam os planos da parede.'),
     it('compressa', 4, 'Protegem as alças e absorvem sangue.'),
@@ -33,12 +34,13 @@ export const apendicectomiaAberta: Cirurgia = {
     it('fioSeda', 1, 'Ligadura do mesoapêndice e da base do apêndice.'),
     it('fioPoliglactina', 1, 'Fechamento dos planos profundos.'),
     it('fioNylon', 1, 'Pele.'),
-    it('spencer', 1, 'Corta os fios.'),
   ],
   opcionais: [
     ...preparoOpcional,
     it('aspirador', 1, 'Aspira líquido na cavidade.'),
-    it('kocher', 2, 'Segura a aponeurose.'),
+    it('allis', 2, 'Pode segurar o peritônio.'),
+    it('babcock', 1, 'Segura segmentos de víscera oca que ficam no paciente.'),
+    it('spencer', 1, 'Tesoura de fios (não consta na apostila).'),
     it('rochester', 1, 'Pedículos maiores.'),
     it('crile', 2, 'Hemostasia.'),
     it('halsted', 2, 'Vasos pequenos.'),

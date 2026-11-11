@@ -1,24 +1,25 @@
 import type { Cirurgia } from '../../types';
-import { it, preparo, preparoOpcional } from './comum';
+import { it, preparo, preparoOpcional, reparo } from './comum';
 
 export const traqueostomia: Cirurgia = {
   id: 'traqueostomia',
   nome: 'Traqueostomia',
   descricao: 'Abertura da traqueia na região cervical para colocar uma cânula e garantir a via aérea.',
   tempos: [
-    { nome: 'Antissepsia e campos', descricao: 'Limpar o pescoço e delimitar o campo.', pedidos: ['cheron', 'cupula', 'gaze', 'campo', 'backhaus'] },
+    { nome: 'Antissepsia e campos', descricao: 'Limpar o pescoço e delimitar o campo.', pedidos: ['foerster', 'cupula', 'gaze', 'campo', 'backhaus'] },
     { nome: 'Anestesia local', descricao: 'Infiltrar anestésico na região da incisão.', pedidos: ['seringa'] },
-    { nome: 'Incisão', descricao: 'Incisão da pele no pescoço, sobre a traqueia.', pedidos: ['bisturi3', 'lamina15'] },
+    { nome: 'Incisão', descricao: 'Incisão da pele no pescoço, sobre a traqueia.', pedidos: ['bisturi3', 'lamina15', 'halstedReta'] },
     { nome: 'Dissecção por planos', descricao: 'Abrir os planos até a traqueia, afastando e fazendo hemostasia.', pedidos: ['metzenbaum', 'kelly', 'farabeuf', 'anatomica'] },
     { nome: 'Abertura da traqueia', descricao: 'Abrir a parede da traqueia e dilatar a abertura.', pedidos: ['bisturi3', 'lamina15', 'dilatadorTrousseau', 'aspirador'] },
     { nome: 'Colocação da cânula', descricao: 'Introduzir a cânula e confirmar a via aérea.', pedidos: ['canulaTraq', 'aspirador'] },
-    { nome: 'Fixação', descricao: 'Fixar a cânula e aproximar a pele.', pedidos: ['portaagulha', 'agulhaCortante', 'fioNylon', 'spencer'] },
+    { nome: 'Fixação', descricao: 'Fixar a cânula e aproximar a pele.', pedidos: ['portaagulha', 'agulhaCortante', 'fioNylon', 'mayo'] },
   ],
   essenciais: [
     ...preparo(15),
     it('seringa', 1, 'Anestesia local.'),
     it('bisturi3', 1),
     it('lamina15', 1, 'Incisão da pele e da traqueia.'),
+    reparo,
     it('metzenbaum', 1, 'Dissecção dos planos do pescoço.'),
     it('kelly', 4, 'Hemostasia e dissecção romba.'),
     it('anatomica', 1, 'Segura tecidos delicados.'),
@@ -29,7 +30,7 @@ export const traqueostomia: Cirurgia = {
     it('portaagulha', 1),
     it('agulhaCortante', 1, 'Pele.'),
     it('fioNylon', 1, 'Pontos de pele.'),
-    it('spencer', 1, 'Corta os fios.'),
+    it('mayo', 1, 'Mayo reta: corta os fios.'),
   ],
   opcionais: [
     ...preparoOpcional,
@@ -42,7 +43,7 @@ export const traqueostomia: Cirurgia = {
     it('adson', 1, 'Pinça de dissecção fina.'),
     it('fioSeda', 1, 'Ligaduras; alguns serviços fixam com fio.'),
     it('fioPoliglactina', 1, 'Ligaduras absorvíveis.'),
-    it('mayo', 1, 'Cortar fios grossos.'),
+    it('spencer', 1, 'Tesoura de fios (não consta na apostila).'),
   ],
   status: 'a_conferir',
   notas: 'Técnica (aberta ou percutânea), tipo de afastador e fixação variam bastante entre serviços e entre emergência e eletiva.',

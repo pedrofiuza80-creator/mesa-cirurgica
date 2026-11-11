@@ -7,6 +7,8 @@ export interface Colocado { id: string; zone: CatId; qtd: number }
 export interface Avaliacao {
   nota: number;
   estrelas: 1 | 2 | 3;
+  /** parte dos instrumentos colocados que a cirurgia usa (essenciais ou opcionais): 1 = nenhum desnecessário */
+  precisao: number;
   /** pontos de cada parte (soma = nota) e o máximo possível */
   partes: { essenciais: number; posicao: number; quantidade: number; desnecessarios: number };
   essenciaisTotal: number;
@@ -35,6 +37,8 @@ export function zonasCertas(id: string): CatId[] {
  *  - 30 pts: instrumentos (essenciais e opcionais) na área certa;
  *  - 10 pts: quantidade certa dos essenciais colocados;
  *  - 10 pts: sem instrumentos desnecessários (perde 3 por item).
+ * Os três primeiros valem na proporção da "precisão": quanto dos instrumentos colocados a cirurgia realmente usa.
+ * Sem isso, jogar o arsenal inteiro na mesa renderia quase a nota máxima.
  */
 export function avaliarMesa(c: Cirurgia, colocados: Colocado[]): Avaliacao {
   const mapa = new Map(colocados.map(x => [x.id, x]));
@@ -56,15 +60,16 @@ export function avaliarMesa(c: Cirurgia, colocados: Colocado[]): Avaliacao {
   const quantidadeErrada = essenciaisCertos.filter(i => mapa.get(i.id)!.qtd !== i.qtd).map(i => ({ id: i.id, pediu: i.qtd, colocou: mapa.get(i.id)!.qtd }));
   const qtdCertas = essenciaisCertos.length - quantidadeErrada.length;
 
+  const precisao = colocados.length ? relevantes.length / colocados.length : 0;
   const partes = {
-    essenciais: c.essenciais.length ? MAX.essenciais * essenciaisCertos.length / c.essenciais.length : 0,
-    posicao: relevantes.length ? MAX.posicao * posicaoCertos / relevantes.length : 0,
-    quantidade: essenciaisCertos.length ? MAX.quantidade * qtdCertas / essenciaisCertos.length : 0,
+    essenciais: (c.essenciais.length ? MAX.essenciais * essenciaisCertos.length / c.essenciais.length : 0) * precisao,
+    posicao: (relevantes.length ? MAX.posicao * posicaoCertos / relevantes.length : 0) * precisao,
+    quantidade: (essenciaisCertos.length ? MAX.quantidade * qtdCertas / essenciaisCertos.length : 0) * precisao,
     desnecessarios: colocados.length ? Math.max(0, MAX.desnecessarios - 3 * desnecessarios.length) : 0,
   };
   const nota = Math.round(partes.essenciais + partes.posicao + partes.quantidade + partes.desnecessarios);
   return {
-    nota, estrelas: nota >= 90 ? 3 : nota >= 70 ? 2 : 1, partes,
+    nota, estrelas: nota >= 90 ? 3 : nota >= 70 ? 2 : 1, precisao, partes,
     essenciaisTotal: c.essenciais.length, essenciaisCertos, faltaram, opcionaisUsados, desnecessarios,
     posicaoTotal: relevantes.length, posicaoCertos, foraDoLugar, quantidadeErrada,
   };

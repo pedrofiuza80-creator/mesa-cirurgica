@@ -1,13 +1,7 @@
 import type { Instrumento } from '../../types';
 
-/** Síntese: aproximar e fechar tecidos (sutura), com agulhas, fios e porta-agulhas. */
+/** Síntese: instrumentos COMPLEMENTARES, que não constam na apostila da disciplina (os da apostila estão em apostila.ts). */
 export const SINTESE: Instrumento[] = [
-  { id:'portaagulha', nome:'Porta-agulha de Mayo-Hegar', cat:'sintese',
-    uso:'Segura a agulha com firmeza durante a sutura.',
-    dica:'Mordente curto e robusto; os modelos com inserto de tungstênio têm argolas douradas.' },
-  { id:'mathieu', nome:'Porta-agulha de Mathieu', cat:'sintese',
-    uso:'Porta-agulha de cabo longo, sem argolas, que se trava no fim do cabo; usado em suturas de planos mais profundos.',
-    dica:'Dois cabos longos tipo alicate, com a trava na ponta do cabo, e boca curta.' },
   { id:'derf', nome:'Porta-agulha de Derf', cat:'sintese',
     uso:'Porta-agulha pequeno e delicado, para agulhas finas e suturas delicadas.',
     dica:'Menor que o Mayo-Hegar, com argolas e boca curta.' },

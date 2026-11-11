@@ -170,6 +170,15 @@ const objs: Obj[] = INSTR.map(d => {
   return o;
 });
 const byCat = {} as Record<CatId, Obj[]>; ZONE_ORDER.forEach(c => byCat[c] = objs.filter(o => o.d.cat === c));
+
+/* Filtro "Só apostila": no Explorar, no Quiz e no Montar a mesa, mostra só os instrumentos da apostila da disciplina.
+   (No Simular cirurgia o arsenal é sempre completo.) */
+let soApostila = true;
+try { soApostila = localStorage.getItem('mesa3d_so_apostila') !== '0'; } catch { /* sem armazenamento */ }
+const ativo = (o: Obj) => !soApostila || o.d.apostila !== undefined;
+const porCat = (c: CatId) => byCat[c].filter(ativo);
+/** Itens de apoio da sala que não ficam na mesa de instrumentação (não entram no Montar a mesa). */
+const FORA_DA_MESA = new Set(['manopla', 'caixaCirurgica', 'pincaCirculante']);
 /** Posição e escala do k-ésimo instrumento (de n) dentro de uma área da mesa; com mais de 3, usa duas colunas menores. */
 function zoneSlot(cat: CatId, k: number, n: number, len: number){
   const c = zoneCenter(ZONE_ORDER.indexOf(cat));
@@ -196,6 +205,18 @@ function colocarEquipe(){
   }
 }
 colocarEquipe();
+// botão "Só apostila": liga/desliga o filtro de instrumentos da apostila (Explorar, Quiz e Montar)
+{
+  const btn = el<HTMLButtonElement>('btn-apostila');
+  const aplicar = () => { btn.textContent = `📖 Só apostila: ${soApostila ? 'ligado' : 'desligado'}`; };
+  btn.onclick = () => {
+    soApostila = !soApostila;
+    try { localStorage.setItem('mesa3d_so_apostila', soApostila ? '1' : '0'); } catch { /* ok */ }
+    aplicar();
+    if (mode === 'explorar') startExplore(); else if (mode === 'quiz') startQuiz(); else if (mode === 'montar') startMontar();
+  };
+  aplicar();
+}
 // botão para ocultar as pessoas (a preferência fica salva no navegador)
 {
   const btn = el<HTMLButtonElement>('btn-equipe');
@@ -267,7 +288,7 @@ function normalizeRot(){
 /** Explorar: mostra os instrumentos de um tempo cirúrgico em grade, ocupando a mesa toda. */
 let exploreCat: CatId = 'dierese';
 function layoutExplorar(){
-  const lista = byCat[exploreCat], n = lista.length;
+  const lista = porCat(exploreCat), n = lista.length;
   const cols = n <= 6 ? 3 : n <= 12 ? 4 : 5, rows = Math.ceil(n / cols);
   const cw = 8.4 / cols, ch = 4.2 / rows;
   for (const o of objs) o.g.visible = false;
@@ -287,6 +308,7 @@ function setMode(m: Mode){
   document.querySelector('main')!.style.display = m === 'revisar' ? 'none' : '';
   el('revisar').classList.toggle('on', m === 'revisar');
   for (const c of ZONE_ORDER){ const z = m === 'montar' || m === 'simular'; zones[c].mesh.visible = z; zones[c].flash.visible = z; }
+  el('btn-apostila').style.display = m === 'explorar' || m === 'quiz' || m === 'montar' ? '' : 'none';
   mesa.visible = m !== 'quiz'; tray.visible = m === 'montar' || m === 'simular'; pedestal.visible = m === 'quiz';
   clearInterval(montar.timer);
   if (m === 'simular') startSimular();
@@ -305,7 +327,7 @@ function startExplore(){
   renderExplore();
 }
 function renderExplore(){
-  const tabs = ZONE_ORDER.map((c, i) => `<button class="btn tab ${c === exploreCat ? 'on' : ''}" data-cat="${c}" style="border-color:${CATS[c].cor}">${i + 1}. ${CATS[c].nome}<span class="muted"> · ${byCat[c].length}</span></button>`).join('');
+  const tabs = ZONE_ORDER.map((c, i) => `<button class="btn tab ${c === exploreCat ? 'on' : ''}" data-cat="${c}" style="border-color:${CATS[c].cor}">${i + 1}. ${CATS[c].nome}<span class="muted"> · ${porCat(c).length}</span></button>`).join('');
   panel.innerHTML = `<h2>Explorar a mesa</h2>
     <p>Escolha um tempo cirúrgico para ver seus instrumentos na mesa. Clique em um instrumento para ver o nome, para que serve e como reconhecer.</p>
     <div class="tabs">${tabs}</div>
@@ -330,7 +352,7 @@ const quiz = { q: [] as { o: Obj; type: 'nome' | 'tempo' }[], i:0, score:0, answ
 function getBest(){ try { return Number(localStorage.getItem('mesa3d_best')) || 0; } catch { return 0; } }
 function setBest(v: number){ try { localStorage.setItem('mesa3d_best', String(v)); } catch {} }
 function startQuiz(){
-  quiz.q = shuffle(objs).slice(0, 10).map(o => ({ o, type: Math.random() < 0.7 ? 'nome' as const : 'tempo' as const }));
+  quiz.q = shuffle(objs.filter(ativo)).slice(0, 10).map(o => ({ o, type: o.d.grupo === 'anexo' || Math.random() < 0.7 ? 'nome' as const : 'tempo' as const }));
   quiz.i = 0; quiz.score = 0; quiz.missed = [];
   flyTo(new THREE.Vector3(0, 2.7, 3.7), new THREE.Vector3(0, 0.45, 0));
   hintEl.textContent = 'Arraste para girar o instrumento · role para aproximar';
@@ -344,8 +366,8 @@ function showQuestion(){
   o.g.position.set(0, PED_Y + 1.2, 0); o.g.scale.setScalar(o.ts * 0.6); o.g.rotation.y = 0; o.tr = 0;
   let opts: { v: string; t: string }[];
   if (item.type === 'nome'){
-    const same = shuffle(byCat[o.d.cat].filter(x => x !== o)).slice(0, 2);
-    const rest = shuffle(objs.filter(x => x !== o && !same.includes(x))).slice(0, 3 - same.length);
+    const same = shuffle(porCat(o.d.cat).filter(x => x !== o)).slice(0, 2);
+    const rest = shuffle(objs.filter(x => ativo(x) && x !== o && !same.includes(x))).slice(0, 3 - same.length);
     opts = shuffle([o, ...same, ...rest]).map(x => ({ v:x.d.id, t:x.d.nome }));
   } else {
     const others = shuffle(ZONE_ORDER.filter(c => c !== o.d.cat && !o.d.variacao?.tambem.includes(c))).slice(0, 3);
@@ -393,8 +415,9 @@ function startMontar(){
   ZONE_ORDER.forEach(c => montar.count[c] = 0);
   // sorteia 15 instrumentos (2 de cada tempo + 3 quaisquer), para caber na bandeja
   const sorteio: Obj[] = [];
-  for (const c of ZONE_ORDER) sorteio.push(...shuffle(byCat[c]).slice(0, 2));
-  sorteio.push(...shuffle(objs.filter(o => !sorteio.includes(o))).slice(0, traySlots.length - sorteio.length));
+  const elegivel = (o: Obj) => ativo(o) && !FORA_DA_MESA.has(o.d.id);
+  for (const c of ZONE_ORDER) sorteio.push(...shuffle(byCat[c].filter(elegivel)).slice(0, 2));
+  sorteio.push(...shuffle(objs.filter(o => elegivel(o) && !sorteio.includes(o))).slice(0, traySlots.length - sorteio.length));
   montar.set = sorteio;
   ZONE_ORDER.forEach(c => montar.zoneN[c] = sorteio.filter(o => o.d.cat === c).length);
   const slots = shuffle(traySlots);
@@ -610,6 +633,7 @@ function renderSimResultado(c: Cirurgia, r: Avaliacao){
       <div class="stat"><b>${r.faltaram.length}</b><span>Faltaram</span></div>
       <div class="stat"><b>${r.desnecessarios.length}</b><span>Desnecessários</span></div></div>
     <p class="muted" style="margin-top:10px">Posição: ${r.posicaoCertos} de ${r.posicaoTotal} na área certa · Quantidade errada: ${r.quantidadeErrada.length}</p>
+    <p class="muted" style="font-size:12px">Precisão: ${Math.round(r.precisao * 100)}% dos instrumentos colocados são usados nesta cirurgia. Os pontos de essenciais, posição e quantidade valem nessa proporção.</p>
     <p class="muted" style="font-size:12px">Essenciais ${Math.round(r.partes.essenciais)}/${MAX.essenciais} · Posição ${Math.round(r.partes.posicao)}/${MAX.posicao} · Quantidade ${Math.round(r.partes.quantidade)}/${MAX.quantidade} · Sem desnecessários ${Math.round(r.partes.desnecessarios)}/${MAX.desnecessarios}</p>
     ${lista('Faltaram (essenciais)', r.faltaram.map(i => `<li><b>${qtdTxt(i)}</b>${i.obs ? ` <span class="muted">— ${i.obs}</span>` : ''}</li>`), 'Nenhum essencial faltou.')}
     ${lista('Desnecessários', r.desnecessarios.map(d => `<li><b>${nome(d.id)}</b> <span class="muted">— ${d.motivo}</span></li>`), 'Nenhum instrumento desnecessário.')}

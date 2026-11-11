@@ -16,21 +16,22 @@ export function renderRevisar(root: HTMLElement) {
   const erros = validarDados();
   let filtro: CatId | '' = '';
   let busca = '';
+  let origem: '' | 'apostila' | 'complementar' = '';
 
   const draw = () => {
     const q = busca.trim().toLowerCase();
-    const lista = INSTR.filter(d => (!filtro || d.cat === filtro) &&
+    const lista = INSTR.filter(d => (!filtro || d.cat === filtro) && (!origem || (origem === 'apostila') === (d.apostila !== undefined)) &&
       (!q || (d.nome + ' ' + d.uso + ' ' + d.dica).toLowerCase().includes(q)));
-    const nConf = INSTR.filter(d => d.status === 'conferido').length;
+    const nApostila = INSTR.filter(d => d.apostila !== undefined).length;
     const nVar = INSTR.filter(d => d.variacao).length;
     root.innerHTML = `<div class="rev">
       <h2>Revisar conteúdo</h2>
       <p>Aqui está tudo o que o jogo ensina. Confira cada ficha com o material da disciplina e anote o que estiver errado ou diferente na sua faculdade.</p>
-      <p class="muted">Atenção: os textos foram escritos a partir de conhecimento geral e de poucas fontes de internet (flashcards e artigos de divulgação), sem revisão por professor. Por isso <b>todas as fichas estão marcadas "a conferir"</b>. Onde achei divergência entre fontes, há um aviso amarelo na ficha.</p>
+      <p class="muted"><b>Instrumentos com o selo "Apostila p. N"</b> têm texto e tempo cirúrgico tirados da apostila da disciplina (CINST), na página indicada. Os <b>"fora da apostila"</b> são complementares (fios, agulhas, outros afastadores e pinças): foram escritos a partir de conhecimento geral e de poucas fontes de internet, sem revisão por professor, e estão marcados "a conferir". Onde há divergência entre fontes, a ficha mostra um aviso amarelo.</p>
       ${erros.length ? `<div class="card err"><b>Problemas nos arquivos de dados (${erros.length})</b><ul class="miss">${erros.map(e => `<li>${esc(e)}</li>`).join('')}</ul></div>` : ''}
       <div class="stats" style="max-width:520px">
         <div class="stat"><b>${INSTR.length}</b><span>Instrumentos</span></div>
-        <div class="stat"><b>${nConf}/${INSTR.length}</b><span>Conferidos</span></div>
+        <div class="stat"><b>${nApostila}</b><span>Na apostila</span></div>
         <div class="stat"><b>${nVar}</b><span>Classif. varia</span></div></div>
 
       <h3>Cirurgias (${CIRURGIAS.length})</h3>
@@ -45,10 +46,11 @@ export function renderRevisar(root: HTMLElement) {
       <h3>Instrumentos (${lista.length} de ${INSTR.length})</h3>
       <div class="filtros">
         <input id="rv-q" type="search" placeholder="Buscar por nome, uso…" value="${esc(busca)}">
+        <select id="rv-o"><option value="">Todas as origens</option><option value="apostila" ${origem === 'apostila' ? 'selected' : ''}>Só da apostila</option><option value="complementar" ${origem === 'complementar' ? 'selected' : ''}>Fora da apostila</option></select>
         <select id="rv-c"><option value="">Todos os tempos</option>${ZONE_ORDER.map(c => `<option value="${c}" ${filtro === c ? 'selected' : ''}>${CATS[c].nome}</option>`).join('')}</select>
         <button class="btn" id="rv-p">Imprimir</button>
       </div>
-      <div class="tabela">${lista.map(d => `<div class="card"><div class="rtop">${chip(d.cat)}<h2 style="margin:0">${esc(d.nome)}</h2>${sel(d.status)}</div>
+      <div class="tabela">${lista.map(d => `<div class="card"><div class="rtop">${chip(d.cat)}<h2 style="margin:0">${esc(d.nome)}</h2>${d.grupo ? `<span class="st">${d.grupo === 'anexo' ? 'Anexo' : 'Ginecológico'}</span>` : ''}${d.apostila !== undefined ? `<span class="st ok">Apostila p. ${d.apostila}</span>` : '<span class="st">Fora da apostila</span>'}${sel(d.status)}</div>
         <p style="margin-top:8px"><b>Uso:</b> ${esc(d.uso)}</p>
         <p><b>Como reconhecer:</b> ${esc(d.dica)}</p>
         ${d.variacao ? `<p class="aviso">⚠ As fontes divergem.${d.variacao.tambem.length ? ` Também aceito em: ${d.variacao.tambem.map(chip).join(' ')}` : ''}<br>${esc(d.variacao.nota)}</p>` : ''}
@@ -59,6 +61,7 @@ export function renderRevisar(root: HTMLElement) {
     </div>`;
     const q2 = root.querySelector<HTMLInputElement>('#rv-q')!;
     q2.oninput = () => { busca = q2.value; const p = q2.selectionStart; draw(); const n = root.querySelector<HTMLInputElement>('#rv-q')!; n.focus(); n.setSelectionRange(p, p); };
+    root.querySelector<HTMLSelectElement>('#rv-o')!.onchange = e => { origem = (e.target as HTMLSelectElement).value as typeof origem; draw(); };
     root.querySelector<HTMLSelectElement>('#rv-c')!.onchange = e => { filtro = (e.target as HTMLSelectElement).value as CatId | ''; draw(); };
     root.querySelector<HTMLButtonElement>('#rv-p')!.onclick = () => window.print();
   };

@@ -1,25 +1,26 @@
 import type { Cirurgia } from '../../types';
-import { it, preparo, preparoOpcional } from './comum';
+import { it, preparo, preparoOpcional, reparo } from './comum';
 
 export const exereseLipomaCisto: Cirurgia = {
   id: 'exerese-lipoma-cisto',
   nome: 'Exérese de lipoma ou cisto',
   descricao: 'Retirada de um nódulo subcutâneo (lipoma ou cisto) por incisão sobre a lesão, dissecção, hemostasia e fechamento por planos.',
   tempos: [
-    { nome: 'Antissepsia e campos', descricao: 'Limpar a pele e delimitar o campo.', pedidos: ['cheron', 'cupula', 'gaze', 'campo', 'backhaus'] },
+    { nome: 'Antissepsia e campos', descricao: 'Limpar a pele e delimitar o campo.', pedidos: ['foerster', 'cupula', 'gaze', 'campo', 'backhaus'] },
     { nome: 'Anestesia local', descricao: 'Infiltrar anestésico ao redor da lesão.', pedidos: ['seringa'] },
-    { nome: 'Incisão', descricao: 'Abrir a pele sobre a lesão.', pedidos: ['bisturi3', 'lamina15', 'adsonDente'] },
-    { nome: 'Dissecção e exérese', descricao: 'Separar a lesão dos tecidos vizinhos e retirá-la.', pedidos: ['allis', 'metzenbaum', 'adsonDente', 'cubaRim'] },
+    { nome: 'Incisão', descricao: 'Abrir a pele sobre a lesão.', pedidos: ['bisturi3', 'lamina15', 'halstedReta', 'denterato'] },
+    { nome: 'Dissecção e exérese', descricao: 'Separar a lesão dos tecidos vizinhos e retirá-la.', pedidos: ['kelly', 'metzenbaum', 'denterato', 'cubaRim'] },
     { nome: 'Hemostasia', descricao: 'Pinçar e ligar os vasos que sangrarem.', pedidos: ['halsted', 'fioPoliglactina'] },
-    { nome: 'Síntese', descricao: 'Fechar o subcutâneo e a pele.', pedidos: ['portaagulha', 'agulhaRedonda', 'fioPoliglactina', 'agulhaCortante', 'fioNylon', 'spencer'] },
+    { nome: 'Síntese', descricao: 'Fechar o subcutâneo e a pele.', pedidos: ['portaagulha', 'agulhaRedonda', 'fioPoliglactina', 'agulhaCortante', 'fioNylon', 'mayo'] },
   ],
   essenciais: [
     ...preparo(15),
     it('seringa', 1, 'Anestesia local.'),
     it('bisturi3', 1, 'Cabo para a lâmina pequena.'),
     it('lamina15', 1, 'Incisão da pele.'),
-    it('adsonDente', 1, 'Segura a pele.'),
-    it('allis', 2, 'Tracionam a lesão durante a dissecção.'),
+    it('denterato', 1, 'Preensão firme da pele, sem esgarçar.'),
+    it('kelly', 2, 'Pinça tecido adiposo e a lesão durante a dissecção.'),
+    reparo,
     it('metzenbaum', 1, 'Dissecção dos planos ao redor da lesão.'),
     it('halsted', 4, 'Mosquitos para pinçar vasos pequenos.'),
     it('cubaRim', 1, 'Recebe a peça para enviar à anatomia patológica.'),
@@ -28,11 +29,13 @@ export const exereseLipomaCisto: Cirurgia = {
     it('agulhaCortante', 1, 'Pele.'),
     it('fioPoliglactina', 1, 'Fio absorvível para o subcutâneo e ligaduras.'),
     it('fioNylon', 1, 'Pele.'),
-    it('spencer', 1, 'Corta os fios.'),
+    it('mayo', 1, 'Mayo reta: corta os fios.'),
   ],
   opcionais: [
     ...preparoOpcional,
-    it('kelly', 2, 'Hemostasia de vasos um pouco maiores.'),
+    it('allis', 2, 'Pode tracionar a lesão.'),
+    it('adsonDente', 1, 'Alternativa de pinça para a pele.'),
+    it('spencer', 1, 'Tesoura de fios (não consta na apostila).'),
     it('iris', 1, 'Dissecção fina, se a lesão for superficial.'),
     it('farabeuf', 2, 'Afastam as bordas da incisão.'),
     it('senn', 2, 'Afastam as bordas da incisão.'),

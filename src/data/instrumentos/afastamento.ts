@@ -1,32 +1,11 @@
 import type { Instrumento } from '../../types';
 import { FONTE } from './fontes';
 
-/** Afastamento: afastar bordas e estruturas para expor o campo operatório. */
+/** Exposição: instrumentos COMPLEMENTARES, que não constam na apostila da disciplina (os da apostila estão em apostila.ts). */
 export const AFASTAMENTO: Instrumento[] = [
-  { id:'farabeuf', nome:'Afastador de Farabeuf', cat:'afastamento',
-    uso:'Afastador manual, usado em par, para afastar as bordas da ferida em planos superficiais.',
-    dica:'Lâmina chata dobrada nas duas extremidades, com pontas de tamanhos diferentes.', fontes:[FONTE.flashAux] },
-  { id:'doyen', nome:'Válvula de Doyen', cat:'afastamento',
-    uso:'Afasta a parede abdominal em cirurgias abdominais e pélvicas.',
-    dica:'Uma única lâmina larga presa a um cabo.' },
-  { id:'gosset', nome:'Afastador de Gosset', cat:'afastamento',
-    uso:'Afastador autoestático (fica aberto sozinho) usado na parede abdominal, em laparotomias.',
-    dica:'Armação com duas lâminas laterais e uma barra dentada (cremalheira) que mantém a abertura.', fontes:[FONTE.flashAux] },
-  { id:'balfour', nome:'Afastador de Balfour', cat:'afastamento',
-    uso:'Afastador autoestático abdominal com uma lâmina central, usado em laparotomias e cirurgias pélvicas.',
-    dica:'Como o Gosset, mas com uma terceira lâmina no centro.' },
-  { id:'finochietto', nome:'Afastador de Finochietto', cat:'afastamento',
-    uso:'Afastador autoestático de costelas, usado na cirurgia torácica; abre-se girando a manivela.',
-    dica:'Duas lâminas largas e curtas em uma barra dentada, com manivela.', fontes:[FONTE.flashAux] },
-  { id:'volkmann', nome:'Afastador de Volkmann', cat:'afastamento',
-    uso:'Afastador manual de garras (tipo rastelo), para afastar pele e subcutâneo em planos superficiais.',
-    dica:'Cabo reto com a ponta em várias garras curvas.', fontes:[FONTE.flashAux] },
   { id:'senn', nome:'Afastador de Senn (Senn-Miller)', cat:'afastamento',
     uso:'Afastador manual de dupla extremidade: uma ponta em garras e a outra em lâmina, para planos superficiais.',
     dica:'Haste reta com garras em um lado e lâmina larga no outro.' },
-  { id:'deaver', nome:'Afastador de Deaver', cat:'afastamento',
-    uso:'Afastador manual abdominal de lâmina larga e curva, para afastar fígado, intestino e bexiga em campos profundos.',
-    dica:'Lâmina larga e encurvada, cabo longo.' },
   { id:'richardson', nome:'Afastador de Richardson (Richardson-Eastman)', cat:'afastamento',
     uso:'Afastador manual de lâmina larga e curta, para afastar a parede abdominal.',
     dica:'Lâmina larga e rasa, em ângulo reto com o cabo.' },
@@ -43,9 +22,6 @@ export const AFASTAMENTO: Instrumento[] = [
     uso:'Afastador autoestático pequeno, de garras, que mantém a ferida aberta em planos superficiais.',
     dica:'Cabo com argolas e cremalheira, como uma tesoura, e duas hastes terminadas em garras.',
     variacao:{ tambem:[], nota:'As fontes divergem quanto à indicação: uma lista o cita em neurocirurgia e cirurgia perineal; outra, em cirurgia plástica e ortopedia. A classificação (afastamento) não muda.' }, fontes:[FONTE.flashAux] },
-  { id:'valvulaMaleavel', nome:'Válvula maleável', cat:'afastamento',
-    uso:'Lâmina flexível de metal, que pode ser dobrada para afastar fígado, alças intestinais e outras estruturas.',
-    dica:'Fita metálica longa e estreita, que se dobra com a mão.' },
   { id:'ganchoPele', nome:'Gancho de pele', cat:'afastamento',
     uso:'Gancho fino para afastar as bordas da pele em incisões pequenas e delicadas.',
     dica:'Haste fina com a ponta em gancho (um ou dois dentes).' },
