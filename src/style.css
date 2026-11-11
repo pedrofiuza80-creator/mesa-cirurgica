@@ -69,3 +69,19 @@ ul.miss{margin:6px 0 0;padding-left:18px;color:#c9d2df;line-height:1.6}
 #toast.ok{border-color:var(--ok)} #toast.bad{border-color:var(--bad)}
 #loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);background:var(--bg);text-align:center;padding:20px}
 @media (max-width:900px){ main{flex-direction:column} aside{width:auto;height:45%;border-left:0;border-top:1px solid var(--line)} }
+
+/* Página "Revisar conteúdo" */
+#revisar{display:none;flex:1;overflow-y:auto;padding:24px}
+#revisar.on{display:block}
+.rev{max-width:900px;margin:0 auto}
+.rtop{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.rtop .st{margin-left:auto}
+.st{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;border:1px solid var(--line)}
+.st.ok{color:var(--ok);border-color:var(--ok)} .st.todo{color:#f2c14e;border-color:#f2c14e}
+.aviso{background:rgba(242,193,78,.1);border:1px solid #f2c14e;border-radius:8px;padding:8px 10px}
+.card.err{border-color:var(--bad)}
+.filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.filtros input,.filtros select{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit}
+.filtros input{flex:1;min-width:200px}
+code{background:var(--panel2);padding:1px 5px;border-radius:5px}
+@media print{ header,.filtros{display:none} body,#app{height:auto;background:#fff;color:#000} #revisar{overflow:visible} .card{break-inside:avoid;background:#fff;color:#000} p,li,h2{color:#000} .muted{color:#444} }

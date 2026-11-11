@@ -8,6 +8,8 @@ import { CATS, ZONE_ORDER } from './data/categorias';
 import { INSTR } from './data/instrumentos';
 import { mesh, box } from './models/primitivas';
 import { BUILD } from './models/construtores';
+import { renderRevisar } from './revisar';
+import { validarDados } from './data/validar';
 
 declare global { interface Window { __mesaOk?: boolean } }
 
@@ -163,12 +165,13 @@ const legendHTML = () => `<div class="legend">${ZONE_ORDER.map((c, i) =>
 const FOOT = `<div class="foot">Protótipo para estudo. Os modelos 3D são simplificados e a disposição da mesa varia entre faculdades e serviços, então confirme com o material da disciplina de Técnica Operatória.</div>`;
 function infoCard(d: Instrumento){
   return `<div class="card">${chip(d.cat)}<h2 style="margin-top:10px">${d.nome}</h2>
-    <p><b>Uso:</b> ${d.uso}</p><p style="margin:0"><b>Como reconhecer:</b> ${d.dica}</p></div>`;
+    <p><b>Uso:</b> ${d.uso}</p><p style="margin:0"><b>Como reconhecer:</b> ${d.dica}</p>
+    ${d.variacao ? `<p class="aviso" style="margin:10px 0 0">⚠ A classificação varia entre fontes. ${d.variacao.nota}</p>` : ''}</div>`;
 }
 const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
 /* ---------------- Modos ---------------- */
-type Mode = 'explorar' | 'quiz' | 'montar';
+type Mode = 'explorar' | 'quiz' | 'montar' | 'revisar';
 let mode: Mode | null = null, selected: Obj | null = null, hovered: Obj | null = null;
 
 const navButtons = document.querySelectorAll<HTMLButtonElement>('nav button');
@@ -183,11 +186,14 @@ function setMode(m: Mode){
   mode = m; selected = null; hovered = null; tipEl.style.display = 'none';
   navButtons.forEach(b => b.classList.toggle('active', b.dataset.mode === m));
   normalizeRot();
+  document.querySelector('main')!.style.display = m === 'revisar' ? 'none' : '';
+  el('revisar').classList.toggle('on', m === 'revisar');
   mesa.visible = m !== 'quiz'; tray.visible = m === 'montar'; pedestal.visible = m === 'quiz';
   clearInterval(montar.timer);
   if (m === 'explorar') startExplore();
   if (m === 'quiz') startQuiz();
   if (m === 'montar') startMontar();
+  if (m === 'revisar') renderRevisar(el('revisar'));
 }
 navButtons.forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode as Mode)));
 
@@ -237,7 +243,7 @@ function showQuestion(){
     const rest = shuffle(objs.filter(x => x !== o && !same.includes(x))).slice(0, 3 - same.length);
     opts = shuffle([o, ...same, ...rest]).map(x => ({ v:x.d.id, t:x.d.nome }));
   } else {
-    const others = shuffle(ZONE_ORDER.filter(c => c !== o.d.cat)).slice(0, 3);
+    const others = shuffle(ZONE_ORDER.filter(c => c !== o.d.cat && !o.d.variacao?.tambem.includes(c))).slice(0, 3);
     opts = shuffle([o.d.cat, ...others]).map(c => ({ v:c, t:CATS[c].nome }));
   }
   const correct = item.type === 'nome' ? o.d.id : o.d.cat;
@@ -333,7 +339,7 @@ function clickMontar(o: Obj | null, zoneCat: CatId | null | undefined){
   if (!zoneCat) return;
   if (!selected){ toast('Primeiro escolha um instrumento na bandeja'); return; }
   const s = selected;
-  if (s.d.cat === zoneCat){
+  if (s.d.cat === zoneCat || s.d.variacao?.tambem.includes(zoneCat)){
     s.placed = true; s.lift = 0; s.tr = 0;
     s.tp.copy(zoneSlot(zoneCat, montar.count[zoneCat]++));
     zones[zoneCat].flash.material.color.set(0x3fd08a); zones[zoneCat].f = 0.55;
@@ -415,6 +421,7 @@ function tick(){
 
 camera.position.set(0, 9, 9); controls.target.set(0, 0, 0);
 onResize();
+for (const e of validarDados()) console.error('[dados]', e);
 setMode('explorar');
 tick();
 window.__mesaOk = true;
