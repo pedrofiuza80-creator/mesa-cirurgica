@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mesa Cirúrgica 3D — Treino de Instrumentação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand"><div class="logo">✚</div><div>Mesa Cirúrgica 3D<small>Protótipo · treino de instrumentação</small></div></div>
+    <nav>
+      <button data-mode="explorar" class="active">Explorar a mesa</button>
+      <button data-mode="quiz">Quiz</button>
+      <button data-mode="montar">Montar a mesa</button>
+    </nav>
+  </header>
+  <main>
+    <div id="stage">
+      <canvas id="c" tabindex="0"></canvas>
+      <div id="hint"></div>
+      <div id="tip"></div>
+      <div id="toast"></div>
+      <div id="loading">Carregando a mesa 3D…</div>
+    </div>
+    <aside id="panel"></aside>
+  </main>
+</div>
+<script>
+  setTimeout(function(){
+    if(!window.__mesaOk){
+      var l=document.getElementById('loading');
+      if(l) l.innerHTML='Não foi possível carregar o 3D.<br>Recarregue a página.';
+    }
+  }, 12000);
+</script>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

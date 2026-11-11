@@ -1,0 +1,25 @@
+# Mesa Cirúrgica 3D
+
+Jogo de estudo de instrumentação cirúrgica (Técnica Operatória), feito com Vite + TypeScript + Three.js.
+
+## Como rodar
+
+```bash
+npm install
+```
+
+```bash
+npm run dev
+```
+
+Depois abra o endereço que aparecer no terminal (normalmente http://localhost:5173).
+
+## Onde fica cada coisa
+
+- `src/data/instrumentos.ts`: fichas dos instrumentos (nome, categoria, uso, como reconhecer). É aqui que se corrige conteúdo.
+- `src/data/categorias.ts`: os tempos cirúrgicos e suas cores.
+- `src/models/`: desenho 3D dos instrumentos com formas básicas.
+- `src/main.ts`: a cena 3D e os modos de jogo.
+- `prototipo/mesa-cirurgica.html`: o protótipo original, guardado como referência.
+
+Material de estudo: a classificação e a disposição da mesa variam entre faculdades e serviços.
