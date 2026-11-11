@@ -6,7 +6,7 @@ import type { CatId, Instrumento } from './types';
 import { CATS, ZONE_ORDER } from './data/categorias';
 import { INSTR } from './data/instrumentos';
 import { mesh, box } from './models/primitivas';
-import { BUILD } from './models/construtores';
+import { BUILD_ALL as BUILD } from './models/todos';
 import { renderRevisar } from './revisar';
 import { validarDados } from './data/validar';
 import { criarMedico } from './models/pessoas';
@@ -20,6 +20,8 @@ interface Obj {
   d: Instrumento; g: THREE.Group; inner: THREE.Object3D; mats: THREE.MeshStandardMaterial[]; len: number;
   /** posição, rotação e escala de destino (a animação persegue esses valores) */
   tp: THREE.Vector3; tr: number; ts: number; lift: number; glow: number; placed: boolean;
+  /** largura do modelo (eixo z), usada para encaixar na grade */
+  wid: number;
 }
 const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -159,14 +161,17 @@ const objs: Obj[] = INSTR.map(d => {
   const hit = new THREE.Mesh(new THREE.BoxGeometry(sz.x + 0.08, 0.14, Math.max(sz.z, 0.12) + 0.08),
     new THREE.MeshBasicMaterial({ colorWrite:false, depthWrite:false }));
   hit.position.y = 0.07; g.add(hit);
-  const o: Obj = { d, g, inner, mats:[...mats], len: bb.max.x - bb.min.x, tp:new THREE.Vector3(), tr:0, ts:1, lift:0, glow:-1, placed:false };
+  const o: Obj = { d, g, inner, mats:[...mats], len: bb.max.x - bb.min.x, tp:new THREE.Vector3(), tr:0, ts:1, lift:0, glow:-1, placed:false, wid: Math.max(sz.z, 0.1) };
   g.userData.obj = o;
   return o;
 });
 const byCat = {} as Record<CatId, Obj[]>; ZONE_ORDER.forEach(c => byCat[c] = objs.filter(o => o.d.cat === c));
-function zoneSlot(cat: CatId, k: number){
-  const n = byCat[cat].length, c = zoneCenter(ZONE_ORDER.indexOf(cat));
-  return new THREE.Vector3(c.x, 0, c.z + 0.15 + (k - (n - 1) / 2) * 0.58);
+/** Posição e escala do k-ésimo instrumento (de n) dentro de uma área da mesa; com mais de 3, usa duas colunas menores. */
+function zoneSlot(cat: CatId, k: number, n: number, len: number){
+  const c = zoneCenter(ZONE_ORDER.indexOf(cat));
+  if (n <= 3) return { p: new THREE.Vector3(c.x, 0, c.z + 0.15 + (k - (n - 1) / 2) * 0.6), s: Math.min(1, 2.4 / len) };
+  const rows = Math.ceil(n / 2), col = k % 2, row = Math.floor(k / 2);
+  return { p: new THREE.Vector3(c.x + (col - 0.5) * 1.25, 0, c.z + 0.15 + (row - (rows - 1) / 2) * Math.min(0.5, 1.7 / rows)), s: Math.min(0.6, 1.15 / len) };
 }
 
 /* ---------------- Equipe cirúrgica estilizada (feita no código) ---------------- */
@@ -243,7 +248,7 @@ const FOOT = `<div class="foot">Protótipo para estudo. Os modelos 3D são simpl
 function infoCard(d: Instrumento){
   return `<div class="card">${chip(d.cat)}<h2 style="margin-top:10px">${d.nome}</h2>
     <p><b>Uso:</b> ${d.uso}</p><p style="margin:0"><b>Como reconhecer:</b> ${d.dica}</p>
-    ${d.variacao ? `<p class="aviso" style="margin:10px 0 0">⚠ A classificação varia entre fontes. ${d.variacao.nota}</p>` : ''}</div>`;
+    ${d.variacao ? `<p class="aviso" style="margin:10px 0 0">⚠ As fontes divergem. ${d.variacao.nota}</p>` : ''}</div>`;
 }
 const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
@@ -255,8 +260,20 @@ const navButtons = document.querySelectorAll<HTMLButtonElement>('nav button');
 function normalizeRot(){
   for (const o of objs){ const r = ((o.g.rotation.y % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI); o.g.rotation.y = r > Math.PI ? r - 2 * Math.PI : r; o.tr = 0; }
 }
-function layoutMesa(){
-  for (const cat of ZONE_ORDER) byCat[cat].forEach((o, k) => { o.tp.copy(zoneSlot(cat, k)); o.tr = 0; o.ts = 1; o.lift = 0; o.g.visible = true; });
+/** Explorar: mostra os instrumentos de um tempo cirúrgico em grade, ocupando a mesa toda. */
+let exploreCat: CatId = 'dierese';
+function layoutExplorar(){
+  const lista = byCat[exploreCat], n = lista.length;
+  const cols = n <= 6 ? 3 : n <= 12 ? 4 : 5, rows = Math.ceil(n / cols);
+  const cw = 8.4 / cols, ch = 4.2 / rows;
+  for (const o of objs) o.g.visible = false;
+  lista.forEach((o, k) => {
+    const c = k % cols, r = Math.floor(k / cols);
+    o.tp.set(-4.2 + cw * (c + 0.5), 0, -2.1 + ch * (r + 0.5));
+    o.tr = 0; o.lift = 0; o.g.visible = true;
+    o.ts = Math.min(1, (0.9 * cw) / o.len, (0.85 * ch) / o.wid);
+    o.g.scale.setScalar(o.ts);
+  });
 }
 
 function setMode(m: Mode){
@@ -265,6 +282,7 @@ function setMode(m: Mode){
   normalizeRot();
   document.querySelector('main')!.style.display = m === 'revisar' ? 'none' : '';
   el('revisar').classList.toggle('on', m === 'revisar');
+  for (const c of ZONE_ORDER){ zones[c].mesh.visible = m === 'montar'; zones[c].flash.visible = m === 'montar'; }
   mesa.visible = m !== 'quiz'; tray.visible = m === 'montar'; pedestal.visible = m === 'quiz';
   clearInterval(montar.timer);
   if (m === 'explorar') startExplore();
@@ -276,16 +294,21 @@ navButtons.forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode
 
 /* --- Explorar --- */
 function startExplore(){
-  layoutMesa();
+  layoutExplorar();
   flyTo(VISTA_MESA.pos, VISTA_MESA.alvo);
   hintEl.textContent = 'Arraste para girar · role para dar zoom · clique em um instrumento';
   renderExplore();
 }
 function renderExplore(){
+  const tabs = ZONE_ORDER.map((c, i) => `<button class="btn tab ${c === exploreCat ? 'on' : ''}" data-cat="${c}" style="border-color:${CATS[c].cor}">${i + 1}. ${CATS[c].nome}<span class="muted"> · ${byCat[c].length}</span></button>`).join('');
   panel.innerHTML = `<h2>Explorar a mesa</h2>
-    <p>Esta é a mesa organizada pelos tempos cirúrgicos. Clique em qualquer instrumento para ver o nome, para que serve e como reconhecer.</p>
-    ${selected ? infoCard(selected.d) + `<div class="row"><button class="btn" id="back">Ver a mesa inteira</button></div>` : ''}
-    <h3>Tempos cirúrgicos</h3>${legendHTML()}${FOOT}`;
+    <p>Escolha um tempo cirúrgico para ver seus instrumentos na mesa. Clique em um instrumento para ver o nome, para que serve e como reconhecer.</p>
+    <div class="tabs">${tabs}</div>
+    <p class="muted" style="margin-top:8px">${CATS[exploreCat].desc}</p>
+    ${selected ? infoCard(selected.d) + `<div class="row"><button class="btn" id="back">Ver a mesa inteira</button></div>` : ''}${FOOT}`;
+  panel.querySelectorAll<HTMLButtonElement>('.tab').forEach(b => b.onclick = () => {
+    exploreCat = b.dataset.cat as CatId; selected = null; layoutExplorar(); flyTo(VISTA_MESA.pos, VISTA_MESA.alvo); renderExplore();
+  });
   const back = document.getElementById('back');
   if (back) back.onclick = () => { selected = null; flyTo(VISTA_MESA.pos, VISTA_MESA.alvo); renderExplore(); };
 }
@@ -359,13 +382,20 @@ function finishQuiz(){
 }
 
 /* --- Montar a mesa --- */
-const montar = { errors:0, start:0, done:false, count: {} as Record<CatId, number>, timer: undefined as number | undefined, names:true, missed: new Set<Instrumento>(), finalSecs: undefined as number | undefined };
+const montar = { set: [] as Obj[], zoneN: {} as Record<CatId, number>, errors:0, start:0, done:false, count: {} as Record<CatId, number>, timer: undefined as number | undefined, names:true, missed: new Set<Instrumento>(), finalSecs: undefined as number | undefined };
 function startMontar(){
   montar.errors = 0; montar.done = false; montar.missed = new Set(); montar.finalSecs = undefined;
   ZONE_ORDER.forEach(c => montar.count[c] = 0);
+  // sorteia 15 instrumentos (2 de cada tempo + 3 quaisquer), para caber na bandeja
+  const sorteio: Obj[] = [];
+  for (const c of ZONE_ORDER) sorteio.push(...shuffle(byCat[c]).slice(0, 2));
+  sorteio.push(...shuffle(objs.filter(o => !sorteio.includes(o))).slice(0, traySlots.length - sorteio.length));
+  montar.set = sorteio;
+  ZONE_ORDER.forEach(c => montar.zoneN[c] = sorteio.filter(o => o.d.cat === c).length);
   const slots = shuffle(traySlots);
-  objs.forEach((o, i) => {
-    o.placed = false; o.g.visible = true; o.lift = 0; o.ts = 1;
+  for (const o of objs) o.g.visible = false;
+  sorteio.forEach((o, i) => {
+    o.placed = false; o.g.visible = true; o.lift = 0; o.ts = Math.min(1, 2.0 / o.len);
     o.tp.copy(slots[i]).add(new THREE.Vector3((Math.random() - 0.5) * 0.4, 0, (Math.random() - 0.5) * 0.12));
     o.tr = (Math.random() - 0.5) * 0.35 + (Math.random() < 0.5 ? Math.PI : 0);
   });
@@ -376,9 +406,9 @@ function startMontar(){
   clearInterval(montar.timer);
   montar.timer = window.setInterval(() => { const t = document.getElementById('timer'); if (t && !montar.done) t.textContent = fmtTime((performance.now() - montar.start) / 1000); }, 500);
 }
-function placedTotal(){ return objs.filter(o => o.placed).length; }
+function placedTotal(){ return montar.set.filter(o => o.placed).length; }
 function renderMontar(){
-  const n = placedTotal(), total = objs.length;
+  const n = placedTotal(), total = montar.set.length;
   if (montar.done){
     const secs = (performance.now() - montar.start) / 1000;
     const stars = montar.errors === 0 ? '★★★' : montar.errors <= 3 ? '★★☆' : '★☆☆';
@@ -418,11 +448,12 @@ function clickMontar(o: Obj | null, zoneCat: CatId | null | undefined){
   const s = selected;
   if (s.d.cat === zoneCat || s.d.variacao?.tambem.includes(zoneCat)){
     s.placed = true; s.lift = 0; s.tr = 0;
-    s.tp.copy(zoneSlot(zoneCat, montar.count[zoneCat]++));
+    const k = montar.count[zoneCat]++, slot = zoneSlot(zoneCat, k, Math.max(montar.zoneN[zoneCat], k + 1), s.len);
+    s.tp.copy(slot.p); s.ts = slot.s;
     zones[zoneCat].flash.material.color.set(0x3fd08a); zones[zoneCat].f = 0.55;
     toast(`✓ ${montar.names ? s.d.nome : 'Correto'} → ${CATS[zoneCat].nome}`, 'ok');
     selected = null;
-    if (placedTotal() === objs.length){ montar.done = true; montar.finalSecs = (performance.now() - montar.start) / 1000; clearInterval(montar.timer); }
+    if (placedTotal() === montar.set.length){ montar.done = true; montar.finalSecs = (performance.now() - montar.start) / 1000; clearInterval(montar.timer); }
   } else {
     montar.errors++; montar.missed.add(s.d);
     zones[zoneCat].flash.material.color.set(0xef5b5b); zones[zoneCat].f = 0.55;

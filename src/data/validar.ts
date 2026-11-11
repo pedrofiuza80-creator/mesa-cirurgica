@@ -1,6 +1,7 @@
 import { CATS } from './categorias';
 import { INSTR } from './instrumentos';
 import { CIRURGIAS } from './cirurgias';
+import { BUILD_ALL } from '../models/todos';
 
 /** Procura erros nos arquivos de dados (ids repetidos, tempos inválidos, instrumento inexistente...). */
 export function validarDados(): string[] {
@@ -9,6 +10,7 @@ export function validarDados(): string[] {
   for (const d of INSTR) {
     if (ids.has(d.id)) erros.push(`Instrumento com id repetido: ${d.id}`);
     ids.add(d.id);
+    if (!BUILD_ALL[d.id]) erros.push(`${d.nome}: sem modelo 3D (id "${d.id}")`);
     if (!CATS[d.cat]) erros.push(`${d.nome}: categoria inválida "${d.cat}"`);
     for (const c of d.variacao?.tambem ?? []) {
       if (!CATS[c]) erros.push(`${d.nome}: categoria inválida em variacao "${c}"`);

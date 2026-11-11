@@ -26,6 +26,7 @@ export function renderRevisar(root: HTMLElement) {
     root.innerHTML = `<div class="rev">
       <h2>Revisar conteúdo</h2>
       <p>Aqui está tudo o que o jogo ensina. Confira cada ficha com o material da disciplina e anote o que estiver errado ou diferente na sua faculdade.</p>
+      <p class="muted">Atenção: os textos foram escritos a partir de conhecimento geral e de poucas fontes de internet (flashcards e artigos de divulgação), sem revisão por professor. Por isso <b>todas as fichas estão marcadas "a conferir"</b>. Onde achei divergência entre fontes, há um aviso amarelo na ficha.</p>
       ${erros.length ? `<div class="card err"><b>Problemas nos arquivos de dados (${erros.length})</b><ul class="miss">${erros.map(e => `<li>${esc(e)}</li>`).join('')}</ul></div>` : ''}
       <div class="stats" style="max-width:520px">
         <div class="stat"><b>${INSTR.length}</b><span>Instrumentos</span></div>
@@ -50,7 +51,7 @@ export function renderRevisar(root: HTMLElement) {
       <div class="tabela">${lista.map(d => `<div class="card"><div class="rtop">${chip(d.cat)}<h2 style="margin:0">${esc(d.nome)}</h2>${sel(d.status)}</div>
         <p style="margin-top:8px"><b>Uso:</b> ${esc(d.uso)}</p>
         <p><b>Como reconhecer:</b> ${esc(d.dica)}</p>
-        ${d.variacao ? `<p class="aviso">⚠ A classificação varia entre fontes. Também aceito em: ${d.variacao.tambem.map(chip).join(' ')}<br>${esc(d.variacao.nota)}</p>` : ''}
+        ${d.variacao ? `<p class="aviso">⚠ As fontes divergem.${d.variacao.tambem.length ? ` Também aceito em: ${d.variacao.tambem.map(chip).join(' ')}` : ''}<br>${esc(d.variacao.nota)}</p>` : ''}
         ${d.fontes?.length ? `<p class="muted" style="margin:0">Fontes: ${d.fontes.map(esc).join('; ')}</p>` : ''}
         <p class="muted" style="margin:6px 0 0;font-size:12px">id: ${esc(d.id)}</p></div>`).join('') || '<p class="muted">Nada encontrado.</p>'}</div>
       ${creditos()}

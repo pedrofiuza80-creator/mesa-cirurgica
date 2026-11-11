@@ -4,15 +4,15 @@ import { MAT, mesh, plate, bar, ring, box, type Pt } from './primitivas';
 type Mat = THREE.Material;
 type JawCtx = { m: Mat; dk: Mat; y: number };
 /** Desenha a ponta (mordente/lâmina) de um instrumento de argola a partir da articulação em x = px. */
-type JawFn = (g: THREE.Group, px: number, ctx: JawCtx) => void;
-interface RingOpts {
+export type JawFn = (g: THREE.Group, px: number, ctx: JawCtx) => void;
+export interface RingOpts {
   L: number; jawLen: number; jaw: JawFn;
   ringR?: number; tube?: number; sep?: number; shankW?: number;
   gold?: boolean; ratchet?: boolean;
 }
 
 /* Instrumentos de argola (tesouras, pinças hemostáticas, porta-agulha...) */
-function ringInstrument(o: RingOpts): THREE.Group {
+export function ringInstrument(o: RingOpts): THREE.Group {
   const g = new THREE.Group();
   const m = MAT.steel(), rm = o.gold ? MAT.gold() : m, dk = MAT.dark();
   const L = o.L, jawLen = o.jawLen, rr = o.ringR ?? 0.12, tube = o.tube ?? 0.024, sep = o.sep ?? 0.16, y = 0.04;
@@ -35,7 +35,7 @@ function ringInstrument(o: RingOpts): THREE.Group {
   o.jaw(g, px, { m, dk, y });
   return g;
 }
-function hemostatJaw({ jl, w, curve = 0, serr = 'full' }: { jl: number; w: number; curve?: number; serr?: 'full' | 'half' }): JawFn {
+export function hemostatJaw({ jl, w, curve = 0, serr = 'full' }: { jl: number; w: number; curve?: number; serr?: 'full' | 'half' }): JawFn {
   return (g, px, { m, dk, y }) => {
     const c = curve;
     g.add(plate([[px,-w/2],[px+jl*0.5,-w*0.42+c*0.3],[px+jl*0.92,-w*0.28+c*0.85],[px+jl,c],
@@ -48,7 +48,7 @@ function hemostatJaw({ jl, w, curve = 0, serr = 'full' }: { jl: number; w: numbe
     }
   };
 }
-function scissorJaw({ jl, w, curve = 0 }: { jl: number; w: number; curve?: number }): JawFn {
+export function scissorJaw({ jl, w, curve = 0 }: { jl: number; w: number; curve?: number }): JawFn {
   return (g, px, { dk, y }) => {
     const c = curve;
     g.add(plate([[px,-w/2],[px+jl*0.6,-w*0.38+c*0.4],[px+jl*0.93,-w*0.2+c*0.9],[px+jl,c],
@@ -57,13 +57,13 @@ function scissorJaw({ jl, w, curve = 0 }: { jl: number; w: number; curve?: numbe
     for (let i = 0; i < seg.length - 1; i++) g.add(bar(seg[i], seg[i+1], 0.006, 0.004, dk, y + 0.024));
   };
 }
-function needleJaw(jl: number, w: number): JawFn {
+export function needleJaw(jl: number, w: number): JawFn {
   return (g, px, { m, dk, y }) => {
     g.add(plate([[px,-w/2],[px+jl*0.85,-w*0.45],[px+jl,-w*0.25],[px+jl,w*0.25],[px+jl*0.85,w*0.45],[px,w/2]], 0.034, m, y - 0.017));
     g.add(box(jl * 0.7, 0.006, w * 0.6, dk, px + jl * 0.55, y + 0.028, 0));
   };
 }
-function allisJaw(jl: number): JawFn {
+export function allisJaw(jl: number): JawFn {
   return (g, px, { m, dk, y }) => {
     const tx = px + jl;
     g.add(bar([px,-0.02],[tx-0.03,-0.012], 0.022, 0.022, m, y));
@@ -72,7 +72,7 @@ function allisJaw(jl: number): JawFn {
     for (let i = 0; i < 5; i++) g.add(box(0.014, 0.02, 0.012, dk, tx + 0.006, y, -0.044 + i * 0.022));
   };
 }
-function backhausJaw(): JawFn {
+export function backhausJaw(): JawFn {
   return (g, px, { m, y }) => {
     const r = 0.14, cx = px + r;
     for (const s of [1, -1]){
@@ -81,7 +81,7 @@ function backhausJaw(): JawFn {
     }
   };
 }
-function cheronJaw(jl: number): JawFn {
+export function cheronJaw(jl: number): JawFn {
   return (g, px, { m, y }) => {
     const tx = px + jl;
     g.add(bar([px,0],[tx-0.2,0], 0.035, 0.03, m, y));
@@ -89,7 +89,7 @@ function cheronJaw(jl: number): JawFn {
     const o = mesh(geo, m); o.position.set(tx - 0.11, y, 0); o.scale.x = 1.6; g.add(o);
   };
 }
-function forceps({ L, teeth }: { L: number; teeth: boolean }): THREE.Group {
+export function forceps({ L, teeth }: { L: number; teeth: boolean }): THREE.Group {
   const g = new THREE.Group(), m = MAT.steel(), dk = MAT.dark();
   const pts: Pt[] = [[0,-0.042],[L*0.5,-0.05],[L*0.92,-0.02],[L,-0.012],[L,0.012],[L*0.92,0.02],[L*0.5,0.05],[0,0.042]];
   g.add(plate(pts, 0.018, m, 0.005));
